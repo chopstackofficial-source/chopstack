@@ -1,0 +1,23 @@
+[33mcommit b3ad0f1e6d9ebd5bef41ed4b3defb1a5b69a6999[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m
+Author: GodstimeGodspower <godstimeikede@gmail.com>
+Date:   Fri May 29 13:12:09 2026 +0100
+
+    fix: valid package.json structure
+
+[33mcommit 0108afe9744b11f72aba5cf265a662a1f778e5d8[m
+Author: GodstimeGodspower <godstimeikede@gmail.com>
+Date:   Fri May 29 13:07:28 2026 +0100
+
+    fix: use tanstack-start build instead of vite build
+
+[33mcommit 119f474833168fe1f1bf12f6d79b9ce83761472d[m
+Author: GodstimeGodspower <godstimeikede@gmail.com>
+Date:   Fri May 29 12:53:41 2026 +0100
+
+    fix: enable TanStack Start Vercel SSR runtime
+
+[33mcommit 60ab3cf822b4b1723dbf1f66b59d1ef1e04a4b82[m
+Author: GodstimeGodspower <godstimeikede@gmail.com>
+Date:   Thu May 28 08:05:43 2026 +0100
+
+    Chopstack ready for deployment

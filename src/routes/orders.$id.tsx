@@ -1,0 +1,185 @@
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ArrowLeft, CalendarClock, MapPin, Wallet, Truck } from "lucide-react";
+import { formatPrice, formatDate } from "@/lib/format";
+import { toast } from "sonner";
+
+export const Route = createFileRoute("/orders/$id")({ component: OrderDetail });
+
+function OrderDetail() {
+  const { id } = Route.useParams();
+  const { user, profile } = useAuth();
+  const navigate = useNavigate();
+  const [order, setOrder] = useState<any | null>(null);
+  const [showMeetup, setShowMeetup] = useState(false);
+  const [mLoc, setMLoc] = useState("");
+  const [mAt, setMAt] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const load = async () => {
+    const { data: o } = await supabase.from("orders").select("*").eq("id", id).maybeSingle();
+    if (!o) { setOrder(null); return; }
+    const [{ data: listing }, { data: bundle }, { data: people }] = await Promise.all([
+      o.listing_id ? supabase.from("listings").select("*").eq("id", o.listing_id).maybeSingle() : Promise.resolve({ data: null }),
+      o.bundle_id ? supabase.from("bundles").select("*").eq("id", o.bundle_id).maybeSingle() : Promise.resolve({ data: null }),
+      supabase.from("users").select("id, full_name, phone").in("id", [o.buyer_id, o.farmer_id]),
+    ]);
+    const map = Object.fromEntries((people ?? []).map((u: any) => [u.id, u]));
+    setOrder({ ...o, listings: listing, bundles: bundle, buyer: map[o.buyer_id], farmer: map[o.farmer_id] });
+  };
+  useEffect(() => { load(); }, [id]);
+
+  const cancel = async () => {
+    if (!confirm("Are you sure you want to cancel this order?")) return;
+    const isBuyer = user?.id === order.buyer_id;
+    const title = order.listings?.title || order.bundles?.title;
+    const { error } = await supabase.from("orders").update({ status: "cancelled", cancelled_by: user?.id }).eq("id", id);
+    if (error) return toast.error(error.message);
+    await supabase.from("notifications").insert({
+      user_id: isBuyer ? order.farmer_id : order.buyer_id,
+      title: "Order cancelled",
+      body: `${profile?.full_name ?? "User"} cancelled the order for ${title}`,
+      type: "order",
+      reference_id: id,
+    });
+    toast.success("Order cancelled"); load();
+  };
+
+  const scheduleMeetup = async () => {
+    if (!mLoc.trim() || !mAt) return toast.error("Add location and time");
+    setBusy(true);
+    const { error } = await supabase.from("orders").update({
+      status: "meetup_scheduled",
+      meetup_location: mLoc.trim(),
+      meetup_at: new Date(mAt).toISOString(),
+    }).eq("id", id);
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    await supabase.from("notifications").insert({
+      user_id: order.buyer_id,
+      title: "Meetup scheduled",
+      body: `${mLoc.trim()} on ${new Date(mAt).toLocaleString()}`,
+      type: "order",
+      reference_id: id,
+    });
+    toast.success("Meetup scheduled"); setShowMeetup(false); load();
+  };
+
+  if (!order) return <div className="p-6 text-muted-foreground">Loading...</div>;
+  const title = order.listings?.title || order.bundles?.title || "Order";
+  const isBuyer = user?.id === order.buyer_id;
+  const canCancel = !["completed", "cancelled", "declined"].includes(order.status) && (isBuyer || user?.id === order.farmer_id);
+
+  return (
+    <div className="min-h-screen bg-background max-w-md mx-auto pb-20">
+      <div className="p-4 flex items-center gap-3 border-b border-border">
+        <button onClick={() => history.back()}><ArrowLeft className="w-5 h-5" /></button>
+        <h1 className="font-bold">Order Details</h1>
+      </div>
+      <div className="p-4 space-y-4">
+        <div className="flex gap-2">
+          <span className="text-[10px] uppercase px-2 py-1 rounded-full bg-primary/20 text-primary font-bold">{order.order_type}</span>
+          <span className="text-[10px] uppercase px-2 py-1 rounded-full bg-secondary">{String(order.status).replace("_", " ")}</span>
+          <span className={`text-[10px] uppercase px-2 py-1 rounded-full font-bold ${order.payment_status === "paid" ? "bg-green-500/20 text-green-500" : "bg-amber-500/20 text-amber-600"}`}>{order.payment_status === "paid" ? "Paid" : "Unpaid"}</span>
+        </div>
+        <div className="bg-card border border-border rounded-xl p-4 space-y-2">
+          <h2 className="font-bold text-lg">{title}</h2>
+          {order.quantity && <p className="text-sm text-muted-foreground">Quantity: {order.quantity}</p>}
+          <p className="text-2xl font-black text-primary">{formatPrice(Number(order.total_price))}</p>
+          <p className="text-xs text-muted-foreground">Placed {formatDate(order.created_at)}</p>
+        </div>
+        <div className="bg-card border border-border rounded-xl p-4 space-y-2 text-sm">
+          <div className="flex items-center gap-2"><Truck className="w-4 h-4 text-primary" /><span className="text-muted-foreground">Fulfilment:</span> <span className="font-medium">{order.delivery_method === "delivery" ? "Delivery to buyer" : order.delivery_method === "meetup" ? "Meetup at pickup point" : "Not set"}</span></div>
+          <div className="flex items-center gap-2"><Wallet className="w-4 h-4 text-primary" /><span className="text-muted-foreground">Payment:</span> <span className="font-medium">{order.payment_method === "cod" ? "Cash on delivery" : order.payment_method === "cash_at_meetup" ? "Cash at meetup" : order.payment_method === "paystack" ? "Paid online (Paystack)" : "Not set"}</span></div>
+        </div>
+        {(order.meetup_location || order.meetup_at) && (
+          <div className="bg-primary/10 border border-primary/40 rounded-xl p-4 space-y-1 text-sm">
+            <div className="flex items-center gap-2 font-semibold text-primary"><CalendarClock className="w-4 h-4" /> Meetup details</div>
+            {order.meetup_location && <p className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 text-muted-foreground" /> {order.meetup_location}</p>}
+            {order.meetup_at && <p className="text-muted-foreground">{new Date(order.meetup_at).toLocaleString()}</p>}
+          </div>
+        )}
+        <div className="bg-card border border-border rounded-xl p-4">
+          <p className="text-xs text-muted-foreground">{isBuyer ? "Farmer" : "Buyer"}</p>
+          <p className="font-semibold">{isBuyer ? order.farmer?.full_name : order.buyer?.full_name}</p>
+        </div>
+        {!isBuyer && order.status === "pending" && profile?.account_type === "farmer" && (
+          <div className="flex gap-2">
+            <Button variant="outline" className="flex-1" onClick={async () => {
+              await supabase.from("orders").update({ status: "declined" }).eq("id", id);
+              await supabase.from("notifications").insert({
+                user_id: order.buyer_id,
+                title: "Order declined",
+                body: `${profile?.full_name ?? "The seller"} declined your order for ${title}`,
+                type: "order",
+                reference_id: id,
+              });
+              load(); toast.success("Declined");
+            }}>Decline</Button>
+            <Button className="flex-1" onClick={async () => { await supabase.from("orders").update({ status: "accepted" }).eq("id", id); await supabase.from("notifications").insert({ user_id: order.buyer_id, title: "Order accepted", body: title, type: "order", reference_id: order.id }); load(); toast.success("Accepted"); }}>Accept</Button>
+          </div>
+        )}
+        {!isBuyer && (order.status === "accepted" || order.status === "meetup_scheduled") && (
+          <>
+            {!showMeetup ? (
+              <div className="flex gap-2">
+                <Button variant="outline" className="flex-1" onClick={() => { setShowMeetup(true); setMLoc(order.meetup_location ?? ""); setMAt(order.meetup_at ? new Date(order.meetup_at).toISOString().slice(0,16) : ""); }}>
+                  <CalendarClock className="w-4 h-4" /> {order.meetup_at ? "Update meetup" : "Schedule meetup"}
+                </Button>
+                <Button className="flex-1" onClick={async () => {
+                  await supabase.from("orders").update({ status: "completed" }).eq("id", id);
+                  await supabase.from("notifications").insert({
+                    user_id: order.buyer_id,
+                    title: "Order completed",
+                    body: `${profile?.full_name ?? "The seller"} marked "${title}" as completed`,
+                    type: "order",
+                    reference_id: id,
+                  });
+                  load(); toast.success("Marked complete");
+                }}>Mark complete</Button>
+              </div>
+            ) : (
+              <div className="bg-card border border-primary rounded-xl p-4 space-y-3">
+                <div>
+                  <Label>Meetup location</Label>
+                  <Input className="mt-1" placeholder="e.g. Ring Road junction" value={mLoc} onChange={(e) => setMLoc(e.target.value)} />
+                </div>
+                <div>
+                  <Label>Date & time</Label>
+                  <Input className="mt-1" type="datetime-local" value={mAt} onChange={(e) => setMAt(e.target.value)} />
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" className="flex-1" onClick={() => setShowMeetup(false)}>Back</Button>
+                  <Button className="flex-1" onClick={scheduleMeetup} disabled={busy}>{busy ? "..." : "Save & notify"}</Button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+        {isBuyer && (order.status === "accepted" || order.status === "meetup_scheduled") && (
+          <Button className="w-full" onClick={async () => {
+            if (!confirm("Mark this order as received and complete?")) return;
+            const { error } = await supabase.from("orders").update({ status: "completed" }).eq("id", id);
+            if (error) return toast.error(error.message);
+            await supabase.from("notifications").insert({
+              user_id: order.farmer_id,
+              title: "Order completed",
+              body: `${profile?.full_name ?? "Buyer"} marked "${title}" as received`,
+              type: "order",
+              reference_id: id,
+            });
+            toast.success("Order completed"); load();
+          }}>Mark as received</Button>
+        )}
+        {canCancel && (
+          <Button variant="outline" className="w-full text-destructive border-destructive" onClick={cancel}>Cancel order</Button>
+        )}
+      </div>
+    </div>
+  );
+}
