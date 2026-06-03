@@ -5,9 +5,12 @@ import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, CalendarClock, MapPin, Wallet, Truck } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { ArrowLeft, CalendarClock, MapPin, Wallet, Truck, ShieldCheck, AlertTriangle, Star } from "lucide-react";
 import { formatPrice, formatDate } from "@/lib/format";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
+import { releaseEscrow, openDispute } from "@/lib/escrow.functions";
 
 export const Route = createFileRoute("/orders/$id")({ component: OrderDetail });
 
@@ -20,6 +23,11 @@ function OrderDetail() {
   const [mLoc, setMLoc] = useState("");
   const [mAt, setMAt] = useState("");
   const [busy, setBusy] = useState(false);
+  const [problemOpen, setProblemOpen] = useState(false);
+  const [problemText, setProblemText] = useState("");
+  const [rating, setRating] = useState<{ stars: number; comment: string; submitted: boolean }>({ stars: 0, comment: "", submitted: false });
+  const releaseFn = useServerFn(releaseEscrow);
+  const disputeFn = useServerFn(openDispute);
 
   const load = async () => {
     const { data: o } = await supabase.from("orders").select("*").eq("id", id).maybeSingle();
@@ -31,6 +39,17 @@ function OrderDetail() {
     ]);
     const map = Object.fromEntries((people ?? []).map((u: any) => [u.id, u]));
     setOrder({ ...o, listings: listing, bundles: bundle, buyer: map[o.buyer_id], farmer: map[o.farmer_id] });
+    // Check if buyer already rated the vendor on this order
+    if (user?.id === o.buyer_id) {
+      const { data: existing } = await supabase
+        .from("ratings")
+        .select("id")
+        .eq("order_id", o.id)
+        .eq("rater_id", user.id)
+        .eq("role", "vendor")
+        .maybeSingle();
+      if (existing) setRating((r) => ({ ...r, submitted: true }));
+    }
   };
   useEffect(() => { load(); }, [id]);
 
@@ -74,6 +93,52 @@ function OrderDetail() {
   const title = order.listings?.title || order.bundles?.title || "Order";
   const isBuyer = user?.id === order.buyer_id;
   const canCancel = !["completed", "cancelled", "declined"].includes(order.status) && (isBuyer || user?.id === order.farmer_id);
+  const escrowHeld = order.escrow_status === "held";
+  const escrowFrozen = order.escrow_status === "frozen";
+  const escrowReleased = order.escrow_status === "released";
+
+  const confirmReceived = async () => {
+    if (!confirm("Confirm you received this order? Funds will be released to the seller.")) return;
+    setBusy(true);
+    try {
+      const r = await releaseFn({ data: { orderId: id } });
+      toast.success(r.payoutSent ? "Order completed — vendor paid" : "Order completed");
+      load();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Could not complete");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const submitProblem = async () => {
+    if (problemText.trim().length < 3) return toast.error("Tell us what went wrong");
+    setBusy(true);
+    try {
+      await disputeFn({ data: { orderId: id, reason: problemText.trim() } });
+      toast.success("Dispute opened. Funds frozen until resolved.");
+      setProblemOpen(false); setProblemText(""); load();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Could not open dispute");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const submitRating = async () => {
+    if (rating.stars < 1) return toast.error("Pick a star rating");
+    const { error } = await supabase.from("ratings").insert({
+      order_id: order.id,
+      rater_id: user!.id,
+      ratee_id: order.farmer_id,
+      role: "vendor",
+      stars: rating.stars,
+      comment: rating.comment.trim() || null,
+    });
+    if (error) return toast.error(error.message);
+    toast.success("Thanks for your rating");
+    setRating((r) => ({ ...r, submitted: true }));
+  };
 
   return (
     <div className="min-h-screen bg-background max-w-md mx-auto pb-20">
@@ -87,6 +152,29 @@ function OrderDetail() {
           <span className="text-[10px] uppercase px-2 py-1 rounded-full bg-secondary">{String(order.status).replace("_", " ")}</span>
           <span className={`text-[10px] uppercase px-2 py-1 rounded-full font-bold ${order.payment_status === "paid" ? "bg-green-500/20 text-green-500" : "bg-amber-500/20 text-amber-600"}`}>{order.payment_status === "paid" ? "Paid" : "Unpaid"}</span>
         </div>
+        {escrowHeld && (
+          <div className="bg-green-500/10 border border-green-500/40 rounded-xl p-3 flex items-start gap-2 text-sm">
+            <ShieldCheck className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-green-600">Protected Payment</p>
+              <p className="text-muted-foreground text-xs">Your money is held safely until you confirm delivery.</p>
+            </div>
+          </div>
+        )}
+        {escrowFrozen && (
+          <div className="bg-amber-500/10 border border-amber-500/40 rounded-xl p-3 flex items-start gap-2 text-sm">
+            <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-amber-600">Funds frozen</p>
+              <p className="text-muted-foreground text-xs">A dispute is open. Our team will review and resolve it.</p>
+            </div>
+          </div>
+        )}
+        {escrowReleased && (
+          <div className="bg-card border border-border rounded-xl p-3 text-sm">
+            <p className="text-muted-foreground">Funds released to seller{order.released_at ? ` on ${formatDate(order.released_at)}` : ""}.</p>
+          </div>
+        )}
         <div className="bg-card border border-border rounded-xl p-4 space-y-2">
           <h2 className="font-bold text-lg">{title}</h2>
           {order.quantity && <p className="text-sm text-muted-foreground">Quantity: {order.quantity}</p>}
@@ -162,19 +250,64 @@ function OrderDetail() {
           </>
         )}
         {isBuyer && (order.status === "accepted" || order.status === "meetup_scheduled") && (
-          <Button className="w-full" onClick={async () => {
-            if (!confirm("Mark this order as received and complete?")) return;
-            const { error } = await supabase.from("orders").update({ status: "completed" }).eq("id", id);
-            if (error) return toast.error(error.message);
-            await supabase.from("notifications").insert({
-              user_id: order.farmer_id,
-              title: "Order completed",
-              body: `${profile?.full_name ?? "Buyer"} marked "${title}" as received`,
-              type: "order",
-              reference_id: id,
-            });
-            toast.success("Order completed"); load();
-          }}>Mark as received</Button>
+          <>
+            {escrowHeld ? (
+              <div className="space-y-2">
+                <Button className="w-full" onClick={confirmReceived} disabled={busy}>
+                  <ShieldCheck className="w-4 h-4" /> I received my order
+                </Button>
+                {!problemOpen ? (
+                  <Button variant="outline" className="w-full" onClick={() => setProblemOpen(true)}>
+                    <AlertTriangle className="w-4 h-4" /> There's a problem
+                  </Button>
+                ) : (
+                  <div className="bg-card border border-amber-500/40 rounded-xl p-4 space-y-3">
+                    <div>
+                      <Label>What went wrong?</Label>
+                      <Textarea className="mt-1" rows={3} placeholder="Describe the issue" value={problemText} onChange={(e) => setProblemText(e.target.value)} />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="outline" className="flex-1" onClick={() => { setProblemOpen(false); setProblemText(""); }}>Back</Button>
+                      <Button className="flex-1" onClick={submitProblem} disabled={busy}>{busy ? "..." : "Open dispute"}</Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Button className="w-full" onClick={async () => {
+                if (!confirm("Mark this order as received and complete?")) return;
+                const { error } = await supabase.from("orders").update({ status: "completed" }).eq("id", id);
+                if (error) return toast.error(error.message);
+                await supabase.from("notifications").insert({
+                  user_id: order.farmer_id,
+                  title: "Order completed",
+                  body: `${profile?.full_name ?? "Buyer"} marked "${title}" as received`,
+                  type: "order",
+                  reference_id: id,
+                });
+                toast.success("Order completed"); load();
+              }}>Mark as received</Button>
+            )}
+          </>
+        )}
+        {isBuyer && order.status === "completed" && !rating.submitted && (
+          <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+            <p className="font-semibold text-sm">Rate the seller</p>
+            <div className="flex gap-1.5">
+              {[1,2,3,4,5].map((n) => (
+                <button key={n} type="button" onClick={() => setRating((r) => ({ ...r, stars: n }))} aria-label={`${n} star${n>1?"s":""}`}>
+                  <Star className={`w-7 h-7 ${n <= rating.stars ? "fill-primary text-primary" : "text-muted-foreground"}`} />
+                </button>
+              ))}
+            </div>
+            <Textarea rows={2} placeholder="Optional comment" value={rating.comment} onChange={(e) => setRating((r) => ({ ...r, comment: e.target.value }))} />
+            <Button className="w-full" onClick={submitRating} disabled={rating.stars < 1}>Submit rating</Button>
+          </div>
+        )}
+        {isBuyer && order.status === "completed" && rating.submitted && (
+          <div className="bg-card border border-border rounded-xl p-3 text-center text-sm text-muted-foreground">
+            Thanks for rating this seller.
+          </div>
         )}
         {canCancel && (
           <Button variant="outline" className="w-full text-destructive border-destructive" onClick={cancel}>Cancel order</Button>
