@@ -57,12 +57,20 @@ export const verifyPaystackPayment = createServerFn({ method: "POST" })
       throw new Error("Unexpected currency");
     }
 
+    // Compute 4% platform commission and vendor payout share, hold in escrow
+    const total = Number(order.total_price);
+    const commission = Math.round(total * 0.04 * 100) / 100;
+    const vendorShare = Math.round((total - commission) * 100) / 100;
+
     const { error: updErr } = await supabase
       .from("orders")
       .update({
         payment_status: "paid",
         payment_reference: data.reference,
         paid_at: new Date().toISOString(),
+        escrow_status: "held",
+        commission_amount: commission,
+        vendor_payout_amount: vendorShare,
       })
       .eq("id", data.orderId);
     if (updErr) throw new Error(updErr.message);
