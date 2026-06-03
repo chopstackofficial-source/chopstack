@@ -93,6 +93,47 @@ export type Database = {
           },
         ]
       }
+      disputes: {
+        Row: {
+          created_at: string
+          id: string
+          opened_by: string
+          order_id: string
+          reason: string | null
+          resolution_note: string | null
+          resolved_at: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          opened_by: string
+          order_id: string
+          reason?: string | null
+          resolution_note?: string | null
+          resolved_at?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          opened_by?: string
+          order_id?: string
+          reason?: string | null
+          resolution_note?: string | null
+          resolved_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "disputes_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       listings: {
         Row: {
           category: string
@@ -254,12 +295,15 @@ export type Database = {
       orders: {
         Row: {
           bundle_id: string | null
+          buyer_confirmed_at: string | null
           buyer_id: string
           cancel_reason: string | null
           cancelled_by: string | null
           commission_amount: number | null
           created_at: string | null
+          delivered_at: string | null
           delivery_method: string | null
+          escrow_status: string
           farmer_id: string
           id: string
           listing_id: string | null
@@ -270,20 +314,27 @@ export type Database = {
           payment_method: string | null
           payment_reference: string | null
           payment_status: string
+          payout_reference: string | null
           pickup_details: string | null
           quantity: number | null
+          released_at: string | null
           split_id: string | null
           status: string | null
           total_price: number
+          vendor_payout_amount: number | null
+          vendor_payout_status: string
         }
         Insert: {
           bundle_id?: string | null
+          buyer_confirmed_at?: string | null
           buyer_id: string
           cancel_reason?: string | null
           cancelled_by?: string | null
           commission_amount?: number | null
           created_at?: string | null
+          delivered_at?: string | null
           delivery_method?: string | null
+          escrow_status?: string
           farmer_id: string
           id?: string
           listing_id?: string | null
@@ -294,20 +345,27 @@ export type Database = {
           payment_method?: string | null
           payment_reference?: string | null
           payment_status?: string
+          payout_reference?: string | null
           pickup_details?: string | null
           quantity?: number | null
+          released_at?: string | null
           split_id?: string | null
           status?: string | null
           total_price: number
+          vendor_payout_amount?: number | null
+          vendor_payout_status?: string
         }
         Update: {
           bundle_id?: string | null
+          buyer_confirmed_at?: string | null
           buyer_id?: string
           cancel_reason?: string | null
           cancelled_by?: string | null
           commission_amount?: number | null
           created_at?: string | null
+          delivered_at?: string | null
           delivery_method?: string | null
+          escrow_status?: string
           farmer_id?: string
           id?: string
           listing_id?: string | null
@@ -318,11 +376,15 @@ export type Database = {
           payment_method?: string | null
           payment_reference?: string | null
           payment_status?: string
+          payout_reference?: string | null
           pickup_details?: string | null
           quantity?: number | null
+          released_at?: string | null
           split_id?: string | null
           status?: string | null
           total_price?: number
+          vendor_payout_amount?: number | null
+          vendor_payout_status?: string
         }
         Relationships: [
           {
@@ -358,6 +420,47 @@ export type Database = {
             columns: ["split_id"]
             isOneToOne: false
             referencedRelation: "splits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ratings: {
+        Row: {
+          comment: string | null
+          created_at: string
+          id: string
+          order_id: string
+          ratee_id: string
+          rater_id: string
+          role: string
+          stars: number
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          order_id: string
+          ratee_id: string
+          rater_id: string
+          role: string
+          stars: number
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          order_id?: string
+          ratee_id?: string
+          rater_id?: string
+          role?: string
+          stars?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ratings_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
         ]
@@ -453,10 +556,35 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       users: {
         Row: {
+          account_name: string | null
+          account_number: string | null
           account_type: string
           avatar_url: string | null
+          bank_code: string | null
+          bank_name: string | null
           created_at: string | null
           delivery_address: string | null
           email: string
@@ -466,12 +594,17 @@ export type Database = {
           lga: string | null
           location: string | null
           longitude: number | null
+          paystack_recipient_code: string | null
           phone: string | null
           state: string | null
         }
         Insert: {
+          account_name?: string | null
+          account_number?: string | null
           account_type: string
           avatar_url?: string | null
+          bank_code?: string | null
+          bank_name?: string | null
           created_at?: string | null
           delivery_address?: string | null
           email: string
@@ -481,12 +614,17 @@ export type Database = {
           lga?: string | null
           location?: string | null
           longitude?: number | null
+          paystack_recipient_code?: string | null
           phone?: string | null
           state?: string | null
         }
         Update: {
+          account_name?: string | null
+          account_number?: string | null
           account_type?: string
           avatar_url?: string | null
+          bank_code?: string | null
+          bank_name?: string | null
           created_at?: string | null
           delivery_address?: string | null
           email?: string
@@ -496,6 +634,7 @@ export type Database = {
           lga?: string | null
           location?: string | null
           longitude?: number | null
+          paystack_recipient_code?: string | null
           phone?: string | null
           state?: string | null
         }
@@ -506,10 +645,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -636,6 +781,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+    },
   },
 } as const
