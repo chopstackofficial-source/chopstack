@@ -1,7 +1,24 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "tanstack-start-app",
+  "name": "chopstack",
   "compatibility_date": "2025-09-24",
   "compatibility_flags": ["nodejs_compat"],
-  "main": "src/server.ts",
+  "main": "dist/server/server.js",
+  "keep_vars": true,
+  "routes": [
+    {
+      "pattern": "chopstack.com.ng",
+      "zone_name": "chopstack.com.ng",
+      "custom_domain": true
+    },
+    {
+      "pattern": "www.chopstack.com.ng",
+      "zone_name": "chopstack.com.ng",
+      "custom_domain": true
+    }
+  ],
+  "assets": {
+    "directory": "dist/client",
+    "binding": "ASSETS"
+  },
 }
