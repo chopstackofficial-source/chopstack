@@ -4,6 +4,19 @@
   "compatibility_date": "2025-09-24",
   "compatibility_flags": ["nodejs_compat"],
   "main": "dist/server/server.js",
+  "keep_vars": true,
+  "routes": [
+    {
+      "pattern": "chopstack.com.ng",
+      "zone_name": "chopstack.com.ng",
+      "custom_domain": true
+    },
+    {
+      "pattern": "www.chopstack.com.ng",
+      "zone_name": "chopstack.com.ng",
+      "custom_domain": true
+    }
+  ],
   "assets": {
     "directory": "dist/client",
     "binding": "ASSETS"
