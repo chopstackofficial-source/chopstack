@@ -96,7 +96,13 @@ export const Route = createFileRoute("/api/public/hooks/order-timers")({
 
         for (const o of stale ?? []) {
           try {
-            const updates: Record<string, unknown> = { status: "completed", buyer_confirmed_at: nowIso };
+            const updates: {
+              status: string;
+              buyer_confirmed_at: string;
+              escrow_status?: string;
+              released_at?: string;
+              vendor_payout_status?: string;
+            } = { status: "completed", buyer_confirmed_at: nowIso };
             if (o.escrow_status === "held") {
               updates.escrow_status = "released";
               updates.released_at = nowIso;

@@ -32,6 +32,7 @@ import { Route as BundlesIndexRouteImport } from './routes/bundles.index'
 import { Route as OrdersIdRouteImport } from './routes/orders.$id'
 import { Route as ListingsIdRouteImport } from './routes/listings.$id'
 import { Route as BundlesIdRouteImport } from './routes/bundles.$id'
+import { Route as ApiPublicHooksOrderTimersRouteImport } from './routes/api/public/hooks/order-timers'
 
 const Char91indexChar93Route = Char91indexChar93RouteImport.update({
   id: '/index',
@@ -148,6 +149,12 @@ const BundlesIdRoute = BundlesIdRouteImport.update({
   path: '/bundles/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksOrderTimersRoute =
+  ApiPublicHooksOrderTimersRouteImport.update({
+    id: '/api/public/hooks/order-timers',
+    path: '/api/public/hooks/order-timers',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -173,6 +180,7 @@ export interface FileRoutesByFullPath {
   '/orders/$id': typeof OrdersIdRoute
   '/bundles/': typeof BundlesIndexRoute
   '/orders/': typeof OrdersIndexRoute
+  '/api/public/hooks/order-timers': typeof ApiPublicHooksOrderTimersRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -198,6 +206,7 @@ export interface FileRoutesByTo {
   '/orders/$id': typeof OrdersIdRoute
   '/bundles': typeof BundlesIndexRoute
   '/orders': typeof OrdersIndexRoute
+  '/api/public/hooks/order-timers': typeof ApiPublicHooksOrderTimersRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -224,6 +233,7 @@ export interface FileRoutesById {
   '/orders/$id': typeof OrdersIdRoute
   '/bundles/': typeof BundlesIndexRoute
   '/orders/': typeof OrdersIndexRoute
+  '/api/public/hooks/order-timers': typeof ApiPublicHooksOrderTimersRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -251,6 +261,7 @@ export interface FileRouteTypes {
     | '/orders/$id'
     | '/bundles/'
     | '/orders/'
+    | '/api/public/hooks/order-timers'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -276,6 +287,7 @@ export interface FileRouteTypes {
     | '/orders/$id'
     | '/bundles'
     | '/orders'
+    | '/api/public/hooks/order-timers'
   id:
     | '__root__'
     | '/'
@@ -301,6 +313,7 @@ export interface FileRouteTypes {
     | '/orders/$id'
     | '/bundles/'
     | '/orders/'
+    | '/api/public/hooks/order-timers'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -327,6 +340,7 @@ export interface RootRouteChildren {
   OrdersIdRoute: typeof OrdersIdRoute
   BundlesIndexRoute: typeof BundlesIndexRoute
   OrdersIndexRoute: typeof OrdersIndexRoute
+  ApiPublicHooksOrderTimersRoute: typeof ApiPublicHooksOrderTimersRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -492,6 +506,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BundlesIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/order-timers': {
+      id: '/api/public/hooks/order-timers'
+      path: '/api/public/hooks/order-timers'
+      fullPath: '/api/public/hooks/order-timers'
+      preLoaderRoute: typeof ApiPublicHooksOrderTimersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -519,6 +540,7 @@ const rootRouteChildren: RootRouteChildren = {
   OrdersIdRoute: OrdersIdRoute,
   BundlesIndexRoute: BundlesIndexRoute,
   OrdersIndexRoute: OrdersIndexRoute,
+  ApiPublicHooksOrderTimersRoute: ApiPublicHooksOrderTimersRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
