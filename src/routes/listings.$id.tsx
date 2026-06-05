@@ -27,6 +27,9 @@ function ListingDetail() {
   const [busy, setBusy] = useState(false);
   const [delivery, setDelivery] = useState<"delivery" | "meetup">("meetup");
   const [payment, setPayment] = useState<"on_delivery" | "paystack">("on_delivery");
+  const [slot, setSlot] = useState<string>("now");
+  const [overrideAddr, setOverrideAddr] = useState(false);
+  const [addr, setAddr] = useState({ state: "", lga: "", town: "", landmark: "" });
   const verifyPayment = useServerFn(verifyPaystackPayment);
 
   const load = async () => {
@@ -43,6 +46,17 @@ function ListingDetail() {
   useEffect(() => { load(); }, [id]);
 
   useEffect(() => {
+    if (profile) {
+      setAddr({
+        state: profile.state ?? "",
+        lga: profile.lga ?? "",
+        town: profile.town ?? "",
+        landmark: profile.landmark ?? "",
+      });
+    }
+  }, [profile]);
+
+  useEffect(() => {
     if (!split) return;
     const ch = supabase.channel(`split-${split.id}`)
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "splits", filter: `id=eq.${split.id}` }, (p) => setSplit(p.new))
@@ -56,6 +70,9 @@ function ListingDetail() {
     if (profile.account_type !== "buyer") return toast.error("Only buyers can order");
     if (listing.farmer_id === user.id) return toast.error("You cannot order your own listing");
     if (qty < 1 || qty > listing.quantity_available) return toast.error("Invalid quantity");
+    if (delivery === "delivery" && !(addr.state && addr.lga && addr.town)) {
+      return toast.error("Add your delivery address (State, LGA, Town)");
+    }
     setBusy(true);
     const total = Number(listing.price) * qty;
     const payMethod =
@@ -64,11 +81,16 @@ function ListingDetail() {
         : delivery === "delivery"
           ? "cod"
           : "cash_at_meetup";
+    const deliveryAddress = delivery === "delivery"
+      ? [addr.landmark, addr.town, addr.lga, addr.state].filter(Boolean).join(", ")
+      : null;
     const { data, error } = await supabase.from("orders").insert({
       listing_id: listing.id, buyer_id: user.id, farmer_id: listing.farmer_id,
       order_type: "solo", quantity: qty, total_price: total,
       delivery_method: delivery,
       payment_method: payMethod,
+      delivery_slot: slot,
+      delivery_address: deliveryAddress,
     }).select().single();
     if (error) { setBusy(false); return toast.error(error.message); }
 
@@ -178,6 +200,43 @@ function ListingDetail() {
                   <div className="grid grid-cols-2 gap-2 mt-1">
                     <button type="button" onClick={() => setDelivery("meetup")} className={`p-2 rounded-lg border text-sm ${delivery === "meetup" ? "border-primary bg-primary/10" : "border-border"}`}>Meetup at pickup</button>
                     <button type="button" onClick={() => setDelivery("delivery")} className={`p-2 rounded-lg border text-sm ${delivery === "delivery" ? "border-primary bg-primary/10" : "border-border"}`}>Delivery to me</button>
+                  </div>
+                </div>
+                {delivery === "delivery" && (
+                  <div className="bg-secondary/40 rounded-lg p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold">Deliver to</span>
+                      <button type="button" className="text-xs text-primary underline" onClick={() => setOverrideAddr((v) => !v)}>
+                        {overrideAddr ? "Use profile address" : "Change"}
+                      </button>
+                    </div>
+                    {!overrideAddr ? (
+                      <p className="text-xs text-muted-foreground">
+                        {[addr.landmark, addr.town, addr.lga, addr.state].filter(Boolean).join(", ") || "No default address — tap Change to add one."}
+                      </p>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input placeholder="State" value={addr.state} onChange={(e) => setAddr({ ...addr, state: e.target.value })} />
+                        <Input placeholder="LGA" value={addr.lga} onChange={(e) => setAddr({ ...addr, lga: e.target.value })} />
+                        <Input placeholder="Town / Area" value={addr.town} onChange={(e) => setAddr({ ...addr, town: e.target.value })} />
+                        <Input placeholder="Landmark" value={addr.landmark} onChange={(e) => setAddr({ ...addr, landmark: e.target.value })} />
+                      </div>
+                    )}
+                  </div>
+                )}
+                <div>
+                  <Label className="text-sm font-medium">Delivery time</Label>
+                  <div className="grid grid-cols-3 gap-1.5 mt-1">
+                    {([
+                      { v: "now", l: "Deliver Now" },
+                      { v: "10-12", l: "10am–12pm" },
+                      { v: "12-2", l: "12pm–2pm" },
+                      { v: "2-4", l: "2pm–4pm" },
+                      { v: "4-6", l: "4pm–6pm" },
+                      { v: "6-8", l: "6pm–8pm" },
+                    ] as const).map((s) => (
+                      <button key={s.v} type="button" onClick={() => setSlot(s.v)} className={`p-1.5 rounded-lg border text-xs ${slot === s.v ? "border-primary bg-primary/10" : "border-border"}`}>{s.l}</button>
+                    ))}
                   </div>
                 </div>
                 <div>
