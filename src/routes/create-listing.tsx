@@ -18,7 +18,7 @@ const CATS = ["Vegetables", "Fruits", "Grains", "Tubers", "Poultry", "Dairy"];
 function CreateListing() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [f, setF] = useState({ title: "", description: "", price: "", quantity_available: "", unit: "kg", category: "Vegetables", pickup_location: "", split_enabled: false, split_slots: "" });
+  const [f, setF] = useState({ title: "", description: "", price: "", quantity_available: "", unit: "kg", category: "Vegetables", pickup_location: "", town: "", available_today: true, split_enabled: false, split_slots: "" });
   const [files, setFiles] = useState<FileList | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -36,7 +36,8 @@ function CreateListing() {
     }
     const { data, error } = await supabase.from("listings").insert({
       farmer_id: user.id, title: f.title, description: f.description, price: Number(f.price), quantity_available: Number(f.quantity_available),
-      unit: f.unit, category: f.category, images, pickup_location: f.pickup_location, split_enabled: f.split_enabled, split_slots: f.split_enabled ? Number(f.split_slots) : null,
+      unit: f.unit, category: f.category, images, pickup_location: f.pickup_location, town: f.town || null, available_today: f.available_today,
+      split_enabled: f.split_enabled, split_slots: f.split_enabled ? Number(f.split_slots) : null,
     }).select().single();
     if (error) { setBusy(false); return toast.error(error.message); }
     if (f.split_enabled && data) {
@@ -73,6 +74,18 @@ function CreateListing() {
         <div>
           <Label>Where can buyers pick it up?</Label>
           <Input placeholder="e.g. Bodija Market, Ibadan" value={f.pickup_location} onChange={(e) => setF({ ...f, pickup_location: e.target.value })} />
+        </div>
+        <div>
+          <Label>Town / Area</Label>
+          <Input placeholder="e.g. Bodija" value={f.town} onChange={(e) => setF({ ...f, town: e.target.value })} />
+          <p className="text-xs text-muted-foreground mt-1">Helps buyers nearby find your listing faster.</p>
+        </div>
+        <div className="bg-card p-3 rounded-xl border border-border space-y-1">
+          <div className="flex items-center justify-between">
+            <Label>Available today</Label>
+            <Switch checked={f.available_today} onCheckedChange={(v) => setF({ ...f, available_today: v })} />
+          </div>
+          <p className="text-xs text-muted-foreground">Turn off if buyers cannot pick this up today.</p>
         </div>
         <div>
           <Label>Add photos</Label>
