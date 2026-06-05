@@ -21,6 +21,8 @@ function Browse() {
   const [cat, setCat] = useState("All");
   const [q, setQ] = useState("");
   const [loc, setLoc] = useState<LocationValue>({});
+  const [todayOnly, setTodayOnly] = useState(false);
+  const [town, setTown] = useState("");
   const [bundles, setBundles] = useState<any[]>([]);
   const [listings, setListings] = useState<any[]>([]);
   const [groupBuys, setGroupBuys] = useState<any[]>([]);
@@ -59,11 +61,13 @@ function Browse() {
       .eq("status", "active");
     if (cat !== "All") query = query.eq("category", cat);
     if (q.trim()) query = query.ilike("title", `%${q.trim()}%`);
+    if (todayOnly) query = query.eq("available_today", true);
+    if (town.trim()) query = query.ilike("town", `%${town.trim()}%`);
     query
       .order("created_at", { ascending: false })
       .limit(30)
       .then(({ data }) => setListings(data ?? []));
-  }, [cat, q]);
+  }, [cat, q, todayOnly, town]);
 
   const guardedSell = () =>
     requireAuthOrRedirect(user, navigate, { redirectTo: "/create-listing" });
@@ -104,6 +108,17 @@ function Browse() {
 
         <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 scrollbar-hide">
           <LocationFilter value={loc} onChange={setLoc} />
+          <button
+            onClick={() => setTodayOnly((v) => !v)}
+            className={cn(
+              "px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap border transition",
+              todayOnly
+                ? "bg-primary text-primary-foreground border-primary shadow-[var(--glow-primary)]"
+                : "bg-card text-foreground border-border",
+            )}
+          >
+            Available today
+          </button>
           {CATEGORIES.map((c) => (
             <button
               key={c}

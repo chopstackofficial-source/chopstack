@@ -25,6 +25,8 @@ function OrderDetail() {
   const [busy, setBusy] = useState(false);
   const [problemOpen, setProblemOpen] = useState(false);
   const [problemText, setProblemText] = useState("");
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
   const [rating, setRating] = useState<{ stars: number; comment: string; submitted: boolean }>({ stars: 0, comment: "", submitted: false });
   const releaseFn = useServerFn(releaseEscrow);
   const disputeFn = useServerFn(openDispute);
@@ -96,6 +98,9 @@ function OrderDetail() {
   const escrowHeld = order.escrow_status === "held";
   const escrowFrozen = order.escrow_status === "frozen";
   const escrowReleased = order.escrow_status === "released";
+  // Phones only shared after vendor acceptance
+  const phonesUnlocked = ["accepted", "meetup_scheduled", "completed"].includes(order.status);
+  const slotLabel = (s: string | null) => ({ "now": "Deliver now", "10-12": "10am – 12pm", "12-2": "12pm – 2pm", "2-4": "2pm – 4pm", "4-6": "4pm – 6pm", "6-8": "6pm – 8pm" } as Record<string,string>)[s ?? ""] ?? null;
 
   const confirmReceived = async () => {
     if (!confirm("Confirm you received this order? Funds will be released to the seller.")) return;
@@ -184,7 +189,19 @@ function OrderDetail() {
         <div className="bg-card border border-border rounded-xl p-4 space-y-2 text-sm">
           <div className="flex items-center gap-2"><Truck className="w-4 h-4 text-primary" /><span className="text-muted-foreground">Fulfilment:</span> <span className="font-medium">{order.delivery_method === "delivery" ? "Delivery to buyer" : order.delivery_method === "meetup" ? "Meetup at pickup point" : "Not set"}</span></div>
           <div className="flex items-center gap-2"><Wallet className="w-4 h-4 text-primary" /><span className="text-muted-foreground">Payment:</span> <span className="font-medium">{order.payment_method === "cod" ? "Cash on delivery" : order.payment_method === "cash_at_meetup" ? "Cash at meetup" : order.payment_method === "paystack" ? "Paid online (Paystack)" : "Not set"}</span></div>
+          {slotLabel(order.delivery_slot) && (
+            <div className="flex items-center gap-2"><CalendarClock className="w-4 h-4 text-primary" /><span className="text-muted-foreground">Slot:</span> <span className="font-medium">{slotLabel(order.delivery_slot)}</span></div>
+          )}
+          {order.delivery_address && (
+            <div className="flex items-start gap-2"><MapPin className="w-4 h-4 text-primary mt-0.5" /><span className="text-muted-foreground">Address:</span> <span className="font-medium">{order.delivery_address}</span></div>
+          )}
         </div>
+        {order.status === "declined" && order.reject_reason && (
+          <div className="bg-destructive/10 border border-destructive/40 rounded-xl p-3 text-sm">
+            <p className="font-semibold text-destructive">Order declined</p>
+            <p className="text-muted-foreground text-xs mt-0.5">Reason: {order.reject_reason}</p>
+          </div>
+        )}
         {(order.meetup_location || order.meetup_at) && (
           <div className="bg-primary/10 border border-primary/40 rounded-xl p-4 space-y-1 text-sm">
             <div className="flex items-center gap-2 font-semibold text-primary"><CalendarClock className="w-4 h-4" /> Meetup details</div>
@@ -195,22 +212,48 @@ function OrderDetail() {
         <div className="bg-card border border-border rounded-xl p-4">
           <p className="text-xs text-muted-foreground">{isBuyer ? "Farmer" : "Buyer"}</p>
           <p className="font-semibold">{isBuyer ? order.farmer?.full_name : order.buyer?.full_name}</p>
+          {phonesUnlocked
+            ? ((isBuyer ? order.farmer?.phone : order.buyer?.phone)
+                ? <a href={`tel:${isBuyer ? order.farmer.phone : order.buyer.phone}`} className="text-primary text-sm font-medium">{isBuyer ? order.farmer.phone : order.buyer.phone}</a>
+                : <p className="text-xs text-muted-foreground">No phone on file</p>)
+            : <p className="text-xs text-muted-foreground">Phone shared after the vendor accepts the order.</p>}
         </div>
         {!isBuyer && order.status === "pending" && profile?.account_type === "farmer" && (
-          <div className="flex gap-2">
-            <Button variant="outline" className="flex-1" onClick={async () => {
-              await supabase.from("orders").update({ status: "declined" }).eq("id", id);
-              await supabase.from("notifications").insert({
-                user_id: order.buyer_id,
-                title: "Order declined",
-                body: `${profile?.full_name ?? "The seller"} declined your order for ${title}`,
-                type: "order",
-                reference_id: id,
-              });
-              load(); toast.success("Declined");
-            }}>Decline</Button>
-            <Button className="flex-1" onClick={async () => { await supabase.from("orders").update({ status: "accepted" }).eq("id", id); await supabase.from("notifications").insert({ user_id: order.buyer_id, title: "Order accepted", body: title, type: "order", reference_id: order.id }); load(); toast.success("Accepted"); }}>Accept</Button>
-          </div>
+          <>
+            {!rejectOpen ? (
+              <div className="flex gap-2">
+                <Button variant="outline" className="flex-1" onClick={() => setRejectOpen(true)}>Reject</Button>
+                <Button className="flex-1" onClick={async () => {
+                  const nowIso = new Date().toISOString();
+                  await supabase.from("orders").update({ status: "accepted", accepted_at: nowIso }).eq("id", id);
+                  await supabase.from("notifications").insert({ user_id: order.buyer_id, title: "Order accepted", body: `${title} — phone numbers are now visible`, type: "order", reference_id: order.id });
+                  load(); toast.success("Accepted");
+                }}>Accept</Button>
+              </div>
+            ) : (
+              <div className="bg-card border border-destructive/40 rounded-xl p-4 space-y-3">
+                <div>
+                  <Label>Why are you rejecting?</Label>
+                  <Textarea className="mt-1" rows={3} placeholder="e.g. Out of stock, too far to deliver..." value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} />
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" className="flex-1" onClick={() => { setRejectOpen(false); setRejectReason(""); }}>Back</Button>
+                  <Button className="flex-1" onClick={async () => {
+                    if (rejectReason.trim().length < 3) return toast.error("Add a brief reason");
+                    await supabase.from("orders").update({ status: "declined", reject_reason: rejectReason.trim() }).eq("id", id);
+                    await supabase.from("notifications").insert({
+                      user_id: order.buyer_id,
+                      title: "Order declined",
+                      body: `${profile?.full_name ?? "The seller"} declined your order: ${rejectReason.trim()}`,
+                      type: "order",
+                      reference_id: id,
+                    });
+                    setRejectOpen(false); setRejectReason(""); load(); toast.success("Order declined");
+                  }}>Confirm reject</Button>
+                </div>
+              </div>
+            )}
+          </>
         )}
         {!isBuyer && (order.status === "accepted" || order.status === "meetup_scheduled") && (
           <>
