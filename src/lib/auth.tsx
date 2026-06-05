@@ -13,6 +13,9 @@ export type Profile = {
   delivery_address: string | null;
   state: string | null;
   lga: string | null;
+  town: string | null;
+  landmark: string | null;
+  terms_accepted_at: string | null;
 };
 
 type AuthCtx = {

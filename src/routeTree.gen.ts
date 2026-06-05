@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as Char91indexChar93RouteImport } from './routes/[index]'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ProfileRouteImport } from './routes/profile'
@@ -31,10 +32,16 @@ import { Route as BundlesIndexRouteImport } from './routes/bundles.index'
 import { Route as OrdersIdRouteImport } from './routes/orders.$id'
 import { Route as ListingsIdRouteImport } from './routes/listings.$id'
 import { Route as BundlesIdRouteImport } from './routes/bundles.$id'
+import { Route as ApiPublicHooksOrderTimersRouteImport } from './routes/api/public/hooks/order-timers'
 
 const Char91indexChar93Route = Char91indexChar93RouteImport.update({
   id: '/index',
   path: '/index',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SignupRoute = SignupRouteImport.update({
@@ -142,6 +149,12 @@ const BundlesIdRoute = BundlesIdRouteImport.update({
   path: '/bundles/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksOrderTimersRoute =
+  ApiPublicHooksOrderTimersRouteImport.update({
+    id: '/api/public/hooks/order-timers',
+    path: '/api/public/hooks/order-timers',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -161,11 +174,13 @@ export interface FileRoutesByFullPath {
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/terms': typeof TermsRoute
   '/bundles/$id': typeof BundlesIdRoute
   '/listings/$id': typeof ListingsIdRoute
   '/orders/$id': typeof OrdersIdRoute
   '/bundles/': typeof BundlesIndexRoute
   '/orders/': typeof OrdersIndexRoute
+  '/api/public/hooks/order-timers': typeof ApiPublicHooksOrderTimersRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -185,11 +200,13 @@ export interface FileRoutesByTo {
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/terms': typeof TermsRoute
   '/bundles/$id': typeof BundlesIdRoute
   '/listings/$id': typeof ListingsIdRoute
   '/orders/$id': typeof OrdersIdRoute
   '/bundles': typeof BundlesIndexRoute
   '/orders': typeof OrdersIndexRoute
+  '/api/public/hooks/order-timers': typeof ApiPublicHooksOrderTimersRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -210,11 +227,13 @@ export interface FileRoutesById {
   '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/terms': typeof TermsRoute
   '/bundles/$id': typeof BundlesIdRoute
   '/listings/$id': typeof ListingsIdRoute
   '/orders/$id': typeof OrdersIdRoute
   '/bundles/': typeof BundlesIndexRoute
   '/orders/': typeof OrdersIndexRoute
+  '/api/public/hooks/order-timers': typeof ApiPublicHooksOrderTimersRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -236,11 +255,13 @@ export interface FileRouteTypes {
     | '/profile'
     | '/reset-password'
     | '/signup'
+    | '/terms'
     | '/bundles/$id'
     | '/listings/$id'
     | '/orders/$id'
     | '/bundles/'
     | '/orders/'
+    | '/api/public/hooks/order-timers'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -260,11 +281,13 @@ export interface FileRouteTypes {
     | '/profile'
     | '/reset-password'
     | '/signup'
+    | '/terms'
     | '/bundles/$id'
     | '/listings/$id'
     | '/orders/$id'
     | '/bundles'
     | '/orders'
+    | '/api/public/hooks/order-timers'
   id:
     | '__root__'
     | '/'
@@ -284,11 +307,13 @@ export interface FileRouteTypes {
     | '/profile'
     | '/reset-password'
     | '/signup'
+    | '/terms'
     | '/bundles/$id'
     | '/listings/$id'
     | '/orders/$id'
     | '/bundles/'
     | '/orders/'
+    | '/api/public/hooks/order-timers'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -309,11 +334,13 @@ export interface RootRouteChildren {
   ProfileRoute: typeof ProfileRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
+  TermsRoute: typeof TermsRoute
   BundlesIdRoute: typeof BundlesIdRoute
   ListingsIdRoute: typeof ListingsIdRoute
   OrdersIdRoute: typeof OrdersIdRoute
   BundlesIndexRoute: typeof BundlesIndexRoute
   OrdersIndexRoute: typeof OrdersIndexRoute
+  ApiPublicHooksOrderTimersRoute: typeof ApiPublicHooksOrderTimersRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -323,6 +350,13 @@ declare module '@tanstack/react-router' {
       path: '/index'
       fullPath: '/index'
       preLoaderRoute: typeof Char91indexChar93RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/signup': {
@@ -472,6 +506,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BundlesIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/order-timers': {
+      id: '/api/public/hooks/order-timers'
+      path: '/api/public/hooks/order-timers'
+      fullPath: '/api/public/hooks/order-timers'
+      preLoaderRoute: typeof ApiPublicHooksOrderTimersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -493,22 +534,14 @@ const rootRouteChildren: RootRouteChildren = {
   ProfileRoute: ProfileRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
+  TermsRoute: TermsRoute,
   BundlesIdRoute: BundlesIdRoute,
   ListingsIdRoute: ListingsIdRoute,
   OrdersIdRoute: OrdersIdRoute,
   BundlesIndexRoute: BundlesIndexRoute,
   OrdersIndexRoute: OrdersIndexRoute,
+  ApiPublicHooksOrderTimersRoute: ApiPublicHooksOrderTimersRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

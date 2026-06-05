@@ -136,6 +136,7 @@ export type Database = {
       }
       listings: {
         Row: {
+          available_today: boolean
           category: string
           created_at: string | null
           description: string | null
@@ -151,9 +152,11 @@ export type Database = {
           split_slots: number | null
           status: string | null
           title: string
+          town: string | null
           unit: string
         }
         Insert: {
+          available_today?: boolean
           category: string
           created_at?: string | null
           description?: string | null
@@ -169,9 +172,11 @@ export type Database = {
           split_slots?: number | null
           status?: string | null
           title: string
+          town?: string | null
           unit: string
         }
         Update: {
+          available_today?: boolean
           category?: string
           created_at?: string | null
           description?: string | null
@@ -187,6 +192,7 @@ export type Database = {
           split_slots?: number | null
           status?: string | null
           title?: string
+          town?: string | null
           unit?: string
         }
         Relationships: [
@@ -294,6 +300,7 @@ export type Database = {
       }
       orders: {
         Row: {
+          accepted_at: string | null
           bundle_id: string | null
           buyer_confirmed_at: string | null
           buyer_id: string
@@ -302,7 +309,9 @@ export type Database = {
           commission_amount: number | null
           created_at: string | null
           delivered_at: string | null
+          delivery_address: string | null
           delivery_method: string | null
+          delivery_slot: string | null
           escrow_status: string
           farmer_id: string
           id: string
@@ -317,6 +326,7 @@ export type Database = {
           payout_reference: string | null
           pickup_details: string | null
           quantity: number | null
+          reject_reason: string | null
           released_at: string | null
           split_id: string | null
           status: string | null
@@ -325,6 +335,7 @@ export type Database = {
           vendor_payout_status: string
         }
         Insert: {
+          accepted_at?: string | null
           bundle_id?: string | null
           buyer_confirmed_at?: string | null
           buyer_id: string
@@ -333,7 +344,9 @@ export type Database = {
           commission_amount?: number | null
           created_at?: string | null
           delivered_at?: string | null
+          delivery_address?: string | null
           delivery_method?: string | null
+          delivery_slot?: string | null
           escrow_status?: string
           farmer_id: string
           id?: string
@@ -348,6 +361,7 @@ export type Database = {
           payout_reference?: string | null
           pickup_details?: string | null
           quantity?: number | null
+          reject_reason?: string | null
           released_at?: string | null
           split_id?: string | null
           status?: string | null
@@ -356,6 +370,7 @@ export type Database = {
           vendor_payout_status?: string
         }
         Update: {
+          accepted_at?: string | null
           bundle_id?: string | null
           buyer_confirmed_at?: string | null
           buyer_id?: string
@@ -364,7 +379,9 @@ export type Database = {
           commission_amount?: number | null
           created_at?: string | null
           delivered_at?: string | null
+          delivery_address?: string | null
           delivery_method?: string | null
+          delivery_slot?: string | null
           escrow_status?: string
           farmer_id?: string
           id?: string
@@ -379,6 +396,7 @@ export type Database = {
           payout_reference?: string | null
           pickup_details?: string | null
           quantity?: number | null
+          reject_reason?: string | null
           released_at?: string | null
           split_id?: string | null
           status?: string | null
@@ -590,6 +608,7 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          landmark: string | null
           latitude: number | null
           lga: string | null
           location: string | null
@@ -597,6 +616,8 @@ export type Database = {
           paystack_recipient_code: string | null
           phone: string | null
           state: string | null
+          terms_accepted_at: string | null
+          town: string | null
         }
         Insert: {
           account_name?: string | null
@@ -610,6 +631,7 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          landmark?: string | null
           latitude?: number | null
           lga?: string | null
           location?: string | null
@@ -617,6 +639,8 @@ export type Database = {
           paystack_recipient_code?: string | null
           phone?: string | null
           state?: string | null
+          terms_accepted_at?: string | null
+          town?: string | null
         }
         Update: {
           account_name?: string | null
@@ -630,6 +654,7 @@ export type Database = {
           email?: string
           full_name?: string
           id?: string
+          landmark?: string | null
           latitude?: number | null
           lga?: string | null
           location?: string | null
@@ -637,6 +662,8 @@ export type Database = {
           paystack_recipient_code?: string | null
           phone?: string | null
           state?: string | null
+          terms_accepted_at?: string | null
+          town?: string | null
         }
         Relationships: []
       }

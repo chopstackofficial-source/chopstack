@@ -16,7 +16,7 @@ export const Route = createFileRoute("/edit-profile")({ component: EditProfile }
 function EditProfile() {
   const { user, profile, refresh, loading } = useAuth();
   const navigate = useNavigate();
-  const [f, setF] = useState({ full_name: "", phone: "", delivery_address: "", state: "", lga: "" });
+  const [f, setF] = useState({ full_name: "", phone: "", delivery_address: "", state: "", lga: "", town: "", landmark: "" });
   const [busy, setBusy] = useState(false);
   const isFarmer = profile?.account_type === "farmer";
   const [bankInfo, setBankInfo] = useState<{ account_name?: string | null; bank_name?: string | null; account_number?: string | null }>({});
@@ -38,6 +38,8 @@ function EditProfile() {
         delivery_address: profile.delivery_address ?? "",
         state: profile.state ?? "",
         lga: profile.lga ?? "",
+        town: profile.town ?? "",
+        landmark: profile.landmark ?? "",
       });
     }
   }, [profile]);
@@ -97,6 +99,11 @@ function EditProfile() {
           <div><Label>State</Label><Input value={f.state} onChange={(e) => setF({ ...f, state: e.target.value })} placeholder="e.g. Oyo" /></div>
           <div><Label>LGA</Label><Input value={f.lga} onChange={(e) => setF({ ...f, lga: e.target.value })} placeholder="e.g. Ibadan North" /></div>
         </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div><Label>Town / Area</Label><Input value={f.town} onChange={(e) => setF({ ...f, town: e.target.value })} placeholder="e.g. Bodija" /></div>
+          <div><Label>Landmark</Label><Input value={f.landmark} onChange={(e) => setF({ ...f, landmark: e.target.value })} placeholder="e.g. near UI gate" /></div>
+        </div>
+        <p className="text-xs text-muted-foreground">This is your default delivery address. You can change it for any single order at checkout.</p>
         <Button type="submit" size="lg" className="w-full" disabled={busy}>{busy ? "Saving..." : "Save changes"}</Button>
       </form>
       {isFarmer && (

@@ -17,6 +17,7 @@ function Signup() {
   const [accountType, setAccountType] = useState<"buyer" | "farmer">("buyer");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   useEffect(() => {
     setMessage(peekAuthMessage());
@@ -26,6 +27,7 @@ function Signup() {
     e.preventDefault();
     if (form.password !== form.confirm) return toast.error("Passwords do not match");
     if (form.password.length < 6) return toast.error("Password must be at least 6 characters");
+    if (!acceptedTerms) return toast.error("Please accept the Terms & Conditions");
     setLoading(true);
     const { data, error } = await supabase.auth.signUp({
       email: form.email,
@@ -37,6 +39,10 @@ function Signup() {
     });
     setLoading(false);
     if (error) return toast.error(error.message);
+    // Record T&C acceptance timestamp (best-effort; profile row is created by trigger)
+    if (data.user) {
+      supabase.from("users").update({ terms_accepted_at: new Date().toISOString() }).eq("id", data.user.id).then(() => {});
+    }
     if (data.session) {
       toast.success("Welcome to CHOPSTACK!");
       const redirectTo = consumeAuthRedirect();
@@ -83,6 +89,20 @@ function Signup() {
         <div><Label>Email</Label><Input type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
         <div><Label>Password</Label><Input type="password" required value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} /></div>
         <div><Label>Confirm password</Label><Input type="password" required value={form.confirm} onChange={(e) => setForm({ ...form, confirm: e.target.value })} /></div>
+        <label className="flex items-start gap-2 text-sm">
+          <input
+            type="checkbox"
+            className="mt-1 accent-primary"
+            checked={acceptedTerms}
+            onChange={(e) => setAcceptedTerms(e.target.checked)}
+            required
+          />
+          <span className="text-muted-foreground">
+            I have read and agree to the{" "}
+            <Link to="/terms" target="_blank" className="text-primary underline">Terms & Conditions</Link>
+            {accountType === "farmer" && ", including packaging standards, the 4% commission, escrow, and dispute policy"}.
+          </span>
+        </label>
         <Button type="submit" size="lg" className="w-full" disabled={loading}>{loading ? "Creating..." : "Sign Up"}</Button>
       </form>
       <p className="text-center text-sm text-muted-foreground mt-6">
