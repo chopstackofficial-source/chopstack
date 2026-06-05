@@ -309,6 +309,7 @@ export type Database = {
           commission_amount: number | null
           created_at: string | null
           delivered_at: string | null
+          delivery_address: string | null
           delivery_method: string | null
           delivery_slot: string | null
           escrow_status: string
@@ -343,6 +344,7 @@ export type Database = {
           commission_amount?: number | null
           created_at?: string | null
           delivered_at?: string | null
+          delivery_address?: string | null
           delivery_method?: string | null
           delivery_slot?: string | null
           escrow_status?: string
@@ -377,6 +379,7 @@ export type Database = {
           commission_amount?: number | null
           created_at?: string | null
           delivered_at?: string | null
+          delivery_address?: string | null
           delivery_method?: string | null
           delivery_slot?: string | null
           escrow_status?: string
