@@ -9,41 +9,12 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as Char91indexChar93RouteImport } from './routes/[index]'
-import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as ProfileRouteImport } from './routes/profile'
-import { Route as OnboardingRouteImport } from './routes/onboarding'
-import { Route as NotificationsRouteImport } from './routes/notifications'
-import { Route as MyListingsRouteImport } from './routes/my-listings'
-import { Route as ManageOrdersRouteImport } from './routes/manage-orders'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as HomeRouteImport } from './routes/home'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
-import { Route as EditProfileRouteImport } from './routes/edit-profile'
-import { Route as DashboardRouteImport } from './routes/dashboard'
-import { Route as CreateListingRouteImport } from './routes/create-listing'
-import { Route as CreateBundleRouteImport } from './routes/create-bundle'
-import { Route as BrowseRouteImport } from './routes/browse'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as OrdersIndexRouteImport } from './routes/orders.index'
-import { Route as BundlesIndexRouteImport } from './routes/bundles.index'
-import { Route as OrdersIdRouteImport } from './routes/orders.$id'
-import { Route as ListingsIdRouteImport } from './routes/listings.$id'
-import { Route as BundlesIdRouteImport } from './routes/bundles.$id'
-import { Route as ApiPublicHooksOrderTimersRouteImport } from './routes/api/public/hooks/order-timers'
 
-const Char91indexChar93Route = Char91indexChar93RouteImport.update({
-  id: '/index',
-  path: '/index',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TermsRoute = TermsRouteImport.update({
-  id: '/terms',
-  path: '/terms',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
@@ -54,39 +25,9 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ProfileRoute = ProfileRouteImport.update({
-  id: '/profile',
-  path: '/profile',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OnboardingRoute = OnboardingRouteImport.update({
-  id: '/onboarding',
-  path: '/onboarding',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const NotificationsRoute = NotificationsRouteImport.update({
-  id: '/notifications',
-  path: '/notifications',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MyListingsRoute = MyListingsRouteImport.update({
-  id: '/my-listings',
-  path: '/my-listings',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ManageOrdersRoute = ManageOrdersRouteImport.update({
-  id: '/manage-orders',
-  path: '/manage-orders',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const HomeRoute = HomeRouteImport.update({
-  id: '/home',
-  path: '/home',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
@@ -94,271 +35,58 @@ const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
   path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
-const EditProfileRoute = EditProfileRouteImport.update({
-  id: '/edit-profile',
-  path: '/edit-profile',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DashboardRoute = DashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CreateListingRoute = CreateListingRouteImport.update({
-  id: '/create-listing',
-  path: '/create-listing',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CreateBundleRoute = CreateBundleRouteImport.update({
-  id: '/create-bundle',
-  path: '/create-bundle',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BrowseRoute = BrowseRouteImport.update({
-  id: '/browse',
-  path: '/browse',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const OrdersIndexRoute = OrdersIndexRouteImport.update({
-  id: '/orders/',
-  path: '/orders/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BundlesIndexRoute = BundlesIndexRouteImport.update({
-  id: '/bundles/',
-  path: '/bundles/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OrdersIdRoute = OrdersIdRouteImport.update({
-  id: '/orders/$id',
-  path: '/orders/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ListingsIdRoute = ListingsIdRouteImport.update({
-  id: '/listings/$id',
-  path: '/listings/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BundlesIdRoute = BundlesIdRouteImport.update({
-  id: '/bundles/$id',
-  path: '/bundles/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicHooksOrderTimersRoute =
-  ApiPublicHooksOrderTimersRouteImport.update({
-    id: '/api/public/hooks/order-timers',
-    path: '/api/public/hooks/order-timers',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/browse': typeof BrowseRoute
-  '/create-bundle': typeof CreateBundleRoute
-  '/create-listing': typeof CreateListingRoute
-  '/dashboard': typeof DashboardRoute
-  '/edit-profile': typeof EditProfileRoute
   '/forgot-password': typeof ForgotPasswordRoute
-  '/home': typeof HomeRoute
-  '/index': typeof Char91indexChar93Route
   '/login': typeof LoginRoute
-  '/manage-orders': typeof ManageOrdersRoute
-  '/my-listings': typeof MyListingsRoute
-  '/notifications': typeof NotificationsRoute
-  '/onboarding': typeof OnboardingRoute
-  '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
-  '/terms': typeof TermsRoute
-  '/bundles/$id': typeof BundlesIdRoute
-  '/listings/$id': typeof ListingsIdRoute
-  '/orders/$id': typeof OrdersIdRoute
-  '/bundles/': typeof BundlesIndexRoute
-  '/orders/': typeof OrdersIndexRoute
-  '/api/public/hooks/order-timers': typeof ApiPublicHooksOrderTimersRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/browse': typeof BrowseRoute
-  '/create-bundle': typeof CreateBundleRoute
-  '/create-listing': typeof CreateListingRoute
-  '/dashboard': typeof DashboardRoute
-  '/edit-profile': typeof EditProfileRoute
   '/forgot-password': typeof ForgotPasswordRoute
-  '/home': typeof HomeRoute
-  '/index': typeof Char91indexChar93Route
   '/login': typeof LoginRoute
-  '/manage-orders': typeof ManageOrdersRoute
-  '/my-listings': typeof MyListingsRoute
-  '/notifications': typeof NotificationsRoute
-  '/onboarding': typeof OnboardingRoute
-  '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
-  '/terms': typeof TermsRoute
-  '/bundles/$id': typeof BundlesIdRoute
-  '/listings/$id': typeof ListingsIdRoute
-  '/orders/$id': typeof OrdersIdRoute
-  '/bundles': typeof BundlesIndexRoute
-  '/orders': typeof OrdersIndexRoute
-  '/api/public/hooks/order-timers': typeof ApiPublicHooksOrderTimersRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/browse': typeof BrowseRoute
-  '/create-bundle': typeof CreateBundleRoute
-  '/create-listing': typeof CreateListingRoute
-  '/dashboard': typeof DashboardRoute
-  '/edit-profile': typeof EditProfileRoute
   '/forgot-password': typeof ForgotPasswordRoute
-  '/home': typeof HomeRoute
-  '/index': typeof Char91indexChar93Route
   '/login': typeof LoginRoute
-  '/manage-orders': typeof ManageOrdersRoute
-  '/my-listings': typeof MyListingsRoute
-  '/notifications': typeof NotificationsRoute
-  '/onboarding': typeof OnboardingRoute
-  '/profile': typeof ProfileRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
-  '/terms': typeof TermsRoute
-  '/bundles/$id': typeof BundlesIdRoute
-  '/listings/$id': typeof ListingsIdRoute
-  '/orders/$id': typeof OrdersIdRoute
-  '/bundles/': typeof BundlesIndexRoute
-  '/orders/': typeof OrdersIndexRoute
-  '/api/public/hooks/order-timers': typeof ApiPublicHooksOrderTimersRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/browse'
-    | '/create-bundle'
-    | '/create-listing'
-    | '/dashboard'
-    | '/edit-profile'
-    | '/forgot-password'
-    | '/home'
-    | '/index'
-    | '/login'
-    | '/manage-orders'
-    | '/my-listings'
-    | '/notifications'
-    | '/onboarding'
-    | '/profile'
-    | '/reset-password'
-    | '/signup'
-    | '/terms'
-    | '/bundles/$id'
-    | '/listings/$id'
-    | '/orders/$id'
-    | '/bundles/'
-    | '/orders/'
-    | '/api/public/hooks/order-timers'
+  fullPaths: '/' | '/forgot-password' | '/login' | '/reset-password' | '/signup'
   fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | '/browse'
-    | '/create-bundle'
-    | '/create-listing'
-    | '/dashboard'
-    | '/edit-profile'
-    | '/forgot-password'
-    | '/home'
-    | '/index'
-    | '/login'
-    | '/manage-orders'
-    | '/my-listings'
-    | '/notifications'
-    | '/onboarding'
-    | '/profile'
-    | '/reset-password'
-    | '/signup'
-    | '/terms'
-    | '/bundles/$id'
-    | '/listings/$id'
-    | '/orders/$id'
-    | '/bundles'
-    | '/orders'
-    | '/api/public/hooks/order-timers'
+  to: '/' | '/forgot-password' | '/login' | '/reset-password' | '/signup'
   id:
     | '__root__'
     | '/'
-    | '/browse'
-    | '/create-bundle'
-    | '/create-listing'
-    | '/dashboard'
-    | '/edit-profile'
     | '/forgot-password'
-    | '/home'
-    | '/index'
     | '/login'
-    | '/manage-orders'
-    | '/my-listings'
-    | '/notifications'
-    | '/onboarding'
-    | '/profile'
     | '/reset-password'
     | '/signup'
-    | '/terms'
-    | '/bundles/$id'
-    | '/listings/$id'
-    | '/orders/$id'
-    | '/bundles/'
-    | '/orders/'
-    | '/api/public/hooks/order-timers'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  BrowseRoute: typeof BrowseRoute
-  CreateBundleRoute: typeof CreateBundleRoute
-  CreateListingRoute: typeof CreateListingRoute
-  DashboardRoute: typeof DashboardRoute
-  EditProfileRoute: typeof EditProfileRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
-  HomeRoute: typeof HomeRoute
-  Char91indexChar93Route: typeof Char91indexChar93Route
   LoginRoute: typeof LoginRoute
-  ManageOrdersRoute: typeof ManageOrdersRoute
-  MyListingsRoute: typeof MyListingsRoute
-  NotificationsRoute: typeof NotificationsRoute
-  OnboardingRoute: typeof OnboardingRoute
-  ProfileRoute: typeof ProfileRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
-  TermsRoute: typeof TermsRoute
-  BundlesIdRoute: typeof BundlesIdRoute
-  ListingsIdRoute: typeof ListingsIdRoute
-  OrdersIdRoute: typeof OrdersIdRoute
-  BundlesIndexRoute: typeof BundlesIndexRoute
-  OrdersIndexRoute: typeof OrdersIndexRoute
-  ApiPublicHooksOrderTimersRoute: typeof ApiPublicHooksOrderTimersRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/index': {
-      id: '/index'
-      path: '/index'
-      fullPath: '/index'
-      preLoaderRoute: typeof Char91indexChar93RouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/terms': {
-      id: '/terms'
-      path: '/terms'
-      fullPath: '/terms'
-      preLoaderRoute: typeof TermsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/signup': {
       id: '/signup'
       path: '/signup'
@@ -373,53 +101,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/profile': {
-      id: '/profile'
-      path: '/profile'
-      fullPath: '/profile'
-      preLoaderRoute: typeof ProfileRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/onboarding': {
-      id: '/onboarding'
-      path: '/onboarding'
-      fullPath: '/onboarding'
-      preLoaderRoute: typeof OnboardingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/notifications': {
-      id: '/notifications'
-      path: '/notifications'
-      fullPath: '/notifications'
-      preLoaderRoute: typeof NotificationsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/my-listings': {
-      id: '/my-listings'
-      path: '/my-listings'
-      fullPath: '/my-listings'
-      preLoaderRoute: typeof MyListingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/manage-orders': {
-      id: '/manage-orders'
-      path: '/manage-orders'
-      fullPath: '/manage-orders'
-      preLoaderRoute: typeof ManageOrdersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/login': {
       id: '/login'
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/home': {
-      id: '/home'
-      path: '/home'
-      fullPath: '/home'
-      preLoaderRoute: typeof HomeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/forgot-password': {
@@ -429,41 +115,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/edit-profile': {
-      id: '/edit-profile'
-      path: '/edit-profile'
-      fullPath: '/edit-profile'
-      preLoaderRoute: typeof EditProfileRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/create-listing': {
-      id: '/create-listing'
-      path: '/create-listing'
-      fullPath: '/create-listing'
-      preLoaderRoute: typeof CreateListingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/create-bundle': {
-      id: '/create-bundle'
-      path: '/create-bundle'
-      fullPath: '/create-bundle'
-      preLoaderRoute: typeof CreateBundleRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/browse': {
-      id: '/browse'
-      path: '/browse'
-      fullPath: '/browse'
-      preLoaderRoute: typeof BrowseRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
@@ -471,76 +122,15 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/orders/': {
-      id: '/orders/'
-      path: '/orders'
-      fullPath: '/orders/'
-      preLoaderRoute: typeof OrdersIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/bundles/': {
-      id: '/bundles/'
-      path: '/bundles'
-      fullPath: '/bundles/'
-      preLoaderRoute: typeof BundlesIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/orders/$id': {
-      id: '/orders/$id'
-      path: '/orders/$id'
-      fullPath: '/orders/$id'
-      preLoaderRoute: typeof OrdersIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/listings/$id': {
-      id: '/listings/$id'
-      path: '/listings/$id'
-      fullPath: '/listings/$id'
-      preLoaderRoute: typeof ListingsIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/bundles/$id': {
-      id: '/bundles/$id'
-      path: '/bundles/$id'
-      fullPath: '/bundles/$id'
-      preLoaderRoute: typeof BundlesIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/order-timers': {
-      id: '/api/public/hooks/order-timers'
-      path: '/api/public/hooks/order-timers'
-      fullPath: '/api/public/hooks/order-timers'
-      preLoaderRoute: typeof ApiPublicHooksOrderTimersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  BrowseRoute: BrowseRoute,
-  CreateBundleRoute: CreateBundleRoute,
-  CreateListingRoute: CreateListingRoute,
-  DashboardRoute: DashboardRoute,
-  EditProfileRoute: EditProfileRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
-  HomeRoute: HomeRoute,
-  Char91indexChar93Route: Char91indexChar93Route,
   LoginRoute: LoginRoute,
-  ManageOrdersRoute: ManageOrdersRoute,
-  MyListingsRoute: MyListingsRoute,
-  NotificationsRoute: NotificationsRoute,
-  OnboardingRoute: OnboardingRoute,
-  ProfileRoute: ProfileRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
-  TermsRoute: TermsRoute,
-  BundlesIdRoute: BundlesIdRoute,
-  ListingsIdRoute: ListingsIdRoute,
-  OrdersIdRoute: OrdersIdRoute,
-  BundlesIndexRoute: BundlesIndexRoute,
-  OrdersIndexRoute: OrdersIndexRoute,
-  ApiPublicHooksOrderTimersRoute: ApiPublicHooksOrderTimersRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
