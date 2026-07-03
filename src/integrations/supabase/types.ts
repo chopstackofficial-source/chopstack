@@ -14,115 +14,109 @@ export type Database = {
   }
   public: {
     Tables: {
-      bundle_items: {
+      buyers: {
         Row: {
-          bundle_id: string
-          created_at: string | null
+          created_at: string
+          email: string
           id: string
-          item_name: string
-          quantity: string
+          name: string
+          phone: string | null
+          updated_at: string
+          zone_id: string | null
         }
         Insert: {
-          bundle_id: string
-          created_at?: string | null
-          id?: string
-          item_name: string
-          quantity: string
+          created_at?: string
+          email: string
+          id: string
+          name: string
+          phone?: string | null
+          updated_at?: string
+          zone_id?: string | null
         }
         Update: {
-          bundle_id?: string
-          created_at?: string | null
+          created_at?: string
+          email?: string
           id?: string
-          item_name?: string
-          quantity?: string
+          name?: string
+          phone?: string | null
+          updated_at?: string
+          zone_id?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "bundle_items_bundle_id_fkey"
-            columns: ["bundle_id"]
+            foreignKeyName: "buyers_zone_id_fkey"
+            columns: ["zone_id"]
             isOneToOne: false
-            referencedRelation: "bundles"
+            referencedRelation: "zones"
             referencedColumns: ["id"]
           },
         ]
       }
-      bundles: {
+      cart_items: {
         Row: {
-          category: string | null
-          cover_image: string | null
-          created_at: string | null
-          description: string | null
-          farmer_id: string
+          created_at: string
           id: string
-          price: number
-          status: string | null
-          target_audience: string | null
-          title: string
+          product_id: string
+          qty: number
+          updated_at: string
+          user_id: string
         }
         Insert: {
-          category?: string | null
-          cover_image?: string | null
-          created_at?: string | null
-          description?: string | null
-          farmer_id: string
+          created_at?: string
           id?: string
-          price: number
-          status?: string | null
-          target_audience?: string | null
-          title: string
+          product_id: string
+          qty?: number
+          updated_at?: string
+          user_id: string
         }
         Update: {
-          category?: string | null
-          cover_image?: string | null
-          created_at?: string | null
-          description?: string | null
-          farmer_id?: string
+          created_at?: string
           id?: string
-          price?: number
-          status?: string | null
-          target_audience?: string | null
-          title?: string
+          product_id?: string
+          qty?: number
+          updated_at?: string
+          user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "bundles_farmer_id_fkey"
-            columns: ["farmer_id"]
+            foreignKeyName: "cart_items_product_id_fkey"
+            columns: ["product_id"]
             isOneToOne: false
-            referencedRelation: "users"
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]
       }
       disputes: {
         Row: {
+          buyer_id: string
           created_at: string
           id: string
-          opened_by: string
           order_id: string
-          reason: string | null
-          resolution_note: string | null
-          resolved_at: string | null
+          reason: string
+          resolution: string | null
           status: string
+          updated_at: string
         }
         Insert: {
+          buyer_id: string
           created_at?: string
           id?: string
-          opened_by: string
           order_id: string
-          reason?: string | null
-          resolution_note?: string | null
-          resolved_at?: string | null
+          reason: string
+          resolution?: string | null
           status?: string
+          updated_at?: string
         }
         Update: {
+          buyer_id?: string
           created_at?: string
           id?: string
-          opened_by?: string
           order_id?: string
-          reason?: string | null
-          resolution_note?: string | null
-          resolved_at?: string | null
+          reason?: string
+          resolution?: string | null
           status?: string
+          updated_at?: string
         }
         Relationships: [
           {
@@ -134,442 +128,238 @@ export type Database = {
           },
         ]
       }
-      listings: {
+      notifications: {
         Row: {
-          available_today: boolean
-          category: string
-          created_at: string | null
-          description: string | null
-          farmer_id: string
+          body: string | null
+          created_at: string
+          deeplink: string | null
           id: string
-          images: string[] | null
-          pickup_latitude: number | null
-          pickup_location: string | null
-          pickup_longitude: number | null
-          price: number
-          quantity_available: number
-          split_enabled: boolean | null
-          split_slots: number | null
-          status: string | null
+          is_read: boolean
           title: string
-          town: string | null
-          unit: string
+          user_id: string
+          user_type: string
         }
         Insert: {
-          available_today?: boolean
-          category: string
-          created_at?: string | null
-          description?: string | null
-          farmer_id: string
+          body?: string | null
+          created_at?: string
+          deeplink?: string | null
           id?: string
-          images?: string[] | null
-          pickup_latitude?: number | null
-          pickup_location?: string | null
-          pickup_longitude?: number | null
-          price: number
-          quantity_available: number
-          split_enabled?: boolean | null
-          split_slots?: number | null
-          status?: string | null
+          is_read?: boolean
           title: string
-          town?: string | null
-          unit: string
+          user_id: string
+          user_type: string
         }
         Update: {
-          available_today?: boolean
-          category?: string
-          created_at?: string | null
-          description?: string | null
-          farmer_id?: string
+          body?: string | null
+          created_at?: string
+          deeplink?: string | null
           id?: string
-          images?: string[] | null
-          pickup_latitude?: number | null
-          pickup_location?: string | null
-          pickup_longitude?: number | null
-          price?: number
-          quantity_available?: number
-          split_enabled?: boolean | null
-          split_slots?: number | null
-          status?: string | null
+          is_read?: boolean
           title?: string
-          town?: string | null
-          unit?: string
+          user_id?: string
+          user_type?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "listings_farmer_id_fkey"
-            columns: ["farmer_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
-      messages: {
+      order_items: {
         Row: {
-          content: string
-          created_at: string | null
+          created_at: string
+          fulfilled_quantity: number | null
           id: string
+          name_snapshot: string
           order_id: string
-          read: boolean | null
-          receiver_id: string
-          sender_id: string
+          product_id: string | null
+          quantity: number
+          refund_amount: number
+          unit_price: number
         }
         Insert: {
-          content: string
-          created_at?: string | null
+          created_at?: string
+          fulfilled_quantity?: number | null
           id?: string
+          name_snapshot: string
           order_id: string
-          read?: boolean | null
-          receiver_id: string
-          sender_id: string
+          product_id?: string | null
+          quantity: number
+          refund_amount?: number
+          unit_price: number
         }
         Update: {
-          content?: string
-          created_at?: string | null
+          created_at?: string
+          fulfilled_quantity?: number | null
           id?: string
+          name_snapshot?: string
           order_id?: string
-          read?: boolean | null
-          receiver_id?: string
-          sender_id?: string
+          product_id?: string | null
+          quantity?: number
+          refund_amount?: number
+          unit_price?: number
         }
         Relationships: [
           {
-            foreignKeyName: "messages_order_id_fkey"
+            foreignKeyName: "order_items_order_id_fkey"
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "orders"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "messages_receiver_id_fkey"
-            columns: ["receiver_id"]
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
             isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "messages_sender_id_fkey"
-            columns: ["sender_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      notifications: {
-        Row: {
-          body: string
-          created_at: string | null
-          id: string
-          read: boolean | null
-          reference_id: string | null
-          title: string
-          type: string
-          user_id: string
-        }
-        Insert: {
-          body: string
-          created_at?: string | null
-          id?: string
-          read?: boolean | null
-          reference_id?: string | null
-          title: string
-          type: string
-          user_id: string
-        }
-        Update: {
-          body?: string
-          created_at?: string | null
-          id?: string
-          read?: boolean | null
-          reference_id?: string | null
-          title?: string
-          type?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "notifications_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]
       }
       orders: {
         Row: {
-          accepted_at: string | null
-          bundle_id: string | null
-          buyer_confirmed_at: string | null
           buyer_id: string
-          cancel_reason: string | null
-          cancelled_by: string | null
-          commission_amount: number | null
-          created_at: string | null
+          created_at: string
           delivered_at: string | null
-          delivery_address: string | null
-          delivery_method: string | null
-          delivery_slot: string | null
+          delivery_fee: number
+          delivery_status: string
+          escrow_release_at: string | null
           escrow_status: string
-          farmer_id: string
           id: string
-          listing_id: string | null
-          meetup_at: string | null
-          meetup_location: string | null
-          order_type: string
+          order_number: string
           paid_at: string | null
-          payment_method: string | null
           payment_reference: string | null
           payment_status: string
-          payout_reference: string | null
-          pickup_details: string | null
-          quantity: number | null
-          reject_reason: string | null
-          released_at: string | null
-          split_id: string | null
-          status: string | null
-          total_price: number
-          vendor_payout_amount: number | null
-          vendor_payout_status: string
+          subtotal: number
+          total: number
+          updated_at: string
+          vendor_id: string
+          zone_id: string
         }
         Insert: {
-          accepted_at?: string | null
-          bundle_id?: string | null
-          buyer_confirmed_at?: string | null
           buyer_id: string
-          cancel_reason?: string | null
-          cancelled_by?: string | null
-          commission_amount?: number | null
-          created_at?: string | null
+          created_at?: string
           delivered_at?: string | null
-          delivery_address?: string | null
-          delivery_method?: string | null
-          delivery_slot?: string | null
+          delivery_fee?: number
+          delivery_status?: string
+          escrow_release_at?: string | null
           escrow_status?: string
-          farmer_id: string
           id?: string
-          listing_id?: string | null
-          meetup_at?: string | null
-          meetup_location?: string | null
-          order_type: string
+          order_number?: string
           paid_at?: string | null
-          payment_method?: string | null
           payment_reference?: string | null
           payment_status?: string
-          payout_reference?: string | null
-          pickup_details?: string | null
-          quantity?: number | null
-          reject_reason?: string | null
-          released_at?: string | null
-          split_id?: string | null
-          status?: string | null
-          total_price: number
-          vendor_payout_amount?: number | null
-          vendor_payout_status?: string
+          subtotal: number
+          total: number
+          updated_at?: string
+          vendor_id: string
+          zone_id: string
         }
         Update: {
-          accepted_at?: string | null
-          bundle_id?: string | null
-          buyer_confirmed_at?: string | null
           buyer_id?: string
-          cancel_reason?: string | null
-          cancelled_by?: string | null
-          commission_amount?: number | null
-          created_at?: string | null
+          created_at?: string
           delivered_at?: string | null
-          delivery_address?: string | null
-          delivery_method?: string | null
-          delivery_slot?: string | null
+          delivery_fee?: number
+          delivery_status?: string
+          escrow_release_at?: string | null
           escrow_status?: string
-          farmer_id?: string
           id?: string
-          listing_id?: string | null
-          meetup_at?: string | null
-          meetup_location?: string | null
-          order_type?: string
+          order_number?: string
           paid_at?: string | null
-          payment_method?: string | null
           payment_reference?: string | null
           payment_status?: string
-          payout_reference?: string | null
-          pickup_details?: string | null
-          quantity?: number | null
-          reject_reason?: string | null
-          released_at?: string | null
-          split_id?: string | null
-          status?: string | null
-          total_price?: number
-          vendor_payout_amount?: number | null
-          vendor_payout_status?: string
+          subtotal?: number
+          total?: number
+          updated_at?: string
+          vendor_id?: string
+          zone_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "orders_bundle_id_fkey"
-            columns: ["bundle_id"]
+            foreignKeyName: "orders_vendor_id_fkey"
+            columns: ["vendor_id"]
             isOneToOne: false
-            referencedRelation: "bundles"
+            referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "orders_buyer_id_fkey"
-            columns: ["buyer_id"]
+            foreignKeyName: "orders_zone_id_fkey"
+            columns: ["zone_id"]
             isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "orders_farmer_id_fkey"
-            columns: ["farmer_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "orders_listing_id_fkey"
-            columns: ["listing_id"]
-            isOneToOne: false
-            referencedRelation: "listings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "orders_split_id_fkey"
-            columns: ["split_id"]
-            isOneToOne: false
-            referencedRelation: "splits"
+            referencedRelation: "zones"
             referencedColumns: ["id"]
           },
         ]
       }
-      ratings: {
+      product_zones: {
         Row: {
-          comment: string | null
+          id: string
+          product_id: string
+          zone_id: string
+        }
+        Insert: {
+          id?: string
+          product_id: string
+          zone_id: string
+        }
+        Update: {
+          id?: string
+          product_id?: string
+          zone_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_zones_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_zones_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
           created_at: string
           id: string
-          order_id: string
-          ratee_id: string
-          rater_id: string
-          role: string
-          stars: number
+          is_sold_out: boolean
+          name: string
+          photo_url: string | null
+          price: number
+          quantity: number
+          updated_at: string
+          vendor_id: string
         }
         Insert: {
-          comment?: string | null
           created_at?: string
           id?: string
-          order_id: string
-          ratee_id: string
-          rater_id: string
-          role: string
-          stars: number
+          is_sold_out?: boolean
+          name: string
+          photo_url?: string | null
+          price: number
+          quantity?: number
+          updated_at?: string
+          vendor_id: string
         }
         Update: {
-          comment?: string | null
           created_at?: string
           id?: string
-          order_id?: string
-          ratee_id?: string
-          rater_id?: string
-          role?: string
-          stars?: number
+          is_sold_out?: boolean
+          name?: string
+          photo_url?: string | null
+          price?: number
+          quantity?: number
+          updated_at?: string
+          vendor_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "ratings_order_id_fkey"
-            columns: ["order_id"]
+            foreignKeyName: "products_vendor_id_fkey"
+            columns: ["vendor_id"]
             isOneToOne: false
-            referencedRelation: "orders"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      split_participants: {
-        Row: {
-          buyer_id: string
-          id: string
-          joined_at: string | null
-          order_id: string
-          split_id: string
-        }
-        Insert: {
-          buyer_id: string
-          id?: string
-          joined_at?: string | null
-          order_id: string
-          split_id: string
-        }
-        Update: {
-          buyer_id?: string
-          id?: string
-          joined_at?: string | null
-          order_id?: string
-          split_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "split_participants_buyer_id_fkey"
-            columns: ["buyer_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "split_participants_order_id_fkey"
-            columns: ["order_id"]
-            isOneToOne: false
-            referencedRelation: "orders"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "split_participants_split_id_fkey"
-            columns: ["split_id"]
-            isOneToOne: false
-            referencedRelation: "splits"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      splits: {
-        Row: {
-          created_at: string | null
-          farmer_id: string
-          filled_slots: number | null
-          id: string
-          listing_id: string
-          status: string | null
-          total_slots: number
-        }
-        Insert: {
-          created_at?: string | null
-          farmer_id: string
-          filled_slots?: number | null
-          id?: string
-          listing_id: string
-          status?: string | null
-          total_slots: number
-        }
-        Update: {
-          created_at?: string | null
-          farmer_id?: string
-          filled_slots?: number | null
-          id?: string
-          listing_id?: string
-          status?: string | null
-          total_slots?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "splits_farmer_id_fkey"
-            columns: ["farmer_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "splits_listing_id_fkey"
-            columns: ["listing_id"]
-            isOneToOne: false
-            referencedRelation: "listings"
+            referencedRelation: "vendors"
             referencedColumns: ["id"]
           },
         ]
@@ -667,6 +457,81 @@ export type Database = {
         }
         Relationships: []
       }
+      vendors: {
+        Row: {
+          account_name: string | null
+          account_number: string | null
+          bank_name: string | null
+          created_at: string
+          email: string
+          id: string
+          name: string
+          paystack_recipient_code: string | null
+          paystack_subaccount_code: string | null
+          phone: string
+          rejection_reason: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          account_name?: string | null
+          account_number?: string | null
+          bank_name?: string | null
+          created_at?: string
+          email: string
+          id: string
+          name: string
+          paystack_recipient_code?: string | null
+          paystack_subaccount_code?: string | null
+          phone: string
+          rejection_reason?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          account_name?: string | null
+          account_number?: string | null
+          bank_name?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          paystack_recipient_code?: string | null
+          paystack_subaccount_code?: string | null
+          phone?: string
+          rejection_reason?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      zones: {
+        Row: {
+          active: boolean
+          created_at: string
+          delivery_fee: number
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          delivery_fee?: number
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          delivery_fee?: number
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -681,7 +546,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "moderator" | "user"
+      app_role: "admin" | "moderator" | "user" | "vendor" | "buyer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -809,7 +674,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "moderator", "user"],
+      app_role: ["admin", "moderator", "user", "vendor", "buyer"],
     },
   },
 } as const
