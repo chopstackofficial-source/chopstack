@@ -1,69 +1,35 @@
-import { supabase } from "@/integrations/supabase/client";
+// LocalStorage cart. Guest and signed-in users share the same store.
+// On checkout, cart is converted into orders per vendor.
+const KEY = "cs_cart_v1";
 
-export type CartRow = {
-  id: string;
-  listing_id: string;
-  qty: number;
-  listing: {
-    id: string;
-    title: string;
-    price: number;
-    unit: string | null;
-    image_url: string | null;
-    farmer_id: string;
-    quantity_available: number | null;
-    available_today: boolean | null;
-  } | null;
-};
+export type CartLine = { productId: string; qty: number };
 
-export async function fetchCart(userId: string): Promise<CartRow[]> {
-  const { data, error } = await supabase
-    .from("cart_items")
-    .select(
-      "id, listing_id, qty, listing:listings(id, title, price, unit, image_url, farmer_id, quantity_available, available_today)",
-    )
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false });
-  if (error) throw new Error(error.message);
-  return (data ?? []) as unknown as CartRow[];
+type Listener = () => void;
+const listeners = new Set<Listener>();
+export function subscribeCart(fn: Listener) { listeners.add(fn); return () => { listeners.delete(fn); }; }
+function emit() { listeners.forEach((l) => l()); }
+
+export function readCart(): CartLine[] {
+  if (typeof window === "undefined") return [];
+  try { return JSON.parse(localStorage.getItem(KEY) ?? "[]"); } catch { return []; }
 }
-
-export async function addToCart(userId: string, listingId: string, qty = 1) {
-  // upsert by unique (user_id, listing_id)
-  const { data: existing } = await supabase
-    .from("cart_items")
-    .select("id, qty")
-    .eq("user_id", userId)
-    .eq("listing_id", listingId)
-    .maybeSingle();
-  if (existing) {
-    const { error } = await supabase
-      .from("cart_items")
-      .update({ qty: existing.qty + qty })
-      .eq("id", existing.id);
-    if (error) throw new Error(error.message);
-  } else {
-    const { error } = await supabase
-      .from("cart_items")
-      .insert({ user_id: userId, listing_id: listingId, qty });
-    if (error) throw new Error(error.message);
-  }
+export function writeCart(lines: CartLine[]) {
+  localStorage.setItem(KEY, JSON.stringify(lines));
+  emit();
 }
-
-export async function updateCartQty(itemId: string, qty: number) {
-  if (qty <= 0) {
-    await supabase.from("cart_items").delete().eq("id", itemId);
-    return;
-  }
-  const { error } = await supabase.from("cart_items").update({ qty }).eq("id", itemId);
-  if (error) throw new Error(error.message);
+export function addToCart(productId: string, qty = 1) {
+  const c = readCart();
+  const i = c.findIndex((l) => l.productId === productId);
+  if (i >= 0) c[i].qty += qty; else c.push({ productId, qty });
+  writeCart(c);
 }
-
-export async function removeCartItem(itemId: string) {
-  const { error } = await supabase.from("cart_items").delete().eq("id", itemId);
-  if (error) throw new Error(error.message);
+export function setQty(productId: string, qty: number) {
+  const c = readCart();
+  const i = c.findIndex((l) => l.productId === productId);
+  if (i < 0) return;
+  if (qty <= 0) c.splice(i, 1); else c[i].qty = qty;
+  writeCart(c);
 }
-
-export async function clearCart(userId: string) {
-  await supabase.from("cart_items").delete().eq("user_id", userId);
-}
+export function removeFromCart(productId: string) { setQty(productId, 0); }
+export function clearCart() { writeCart([]); }
+export function cartCount() { return readCart().reduce((s, l) => s + l.qty, 0); }
