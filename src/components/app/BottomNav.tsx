@@ -1,74 +1,39 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Home, Package, Bell, User, ShoppingBag } from "lucide-react";
+import { Home, Search, ShoppingCart, Package, User } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
+import { cartCount, subscribeCart } from "@/lib/cart";
 
 export function BottomNav() {
-  const { profile, user } = useAuth();
   const loc = useLocation();
-  const isFarmer = profile?.account_type === "farmer";
-  const [unread, setUnread] = useState(0);
-
+  const [count, setCount] = useState(0);
   useEffect(() => {
-    if (!user) { setUnread(0); return; }
-    const load = () =>
-      supabase
-        .from("notifications")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", user.id)
-        .eq("read", false)
-        .then(({ count }) => setUnread(count ?? 0));
-    load();
-    const ch = supabase
-      .channel(`notif-${user.id}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
-        () => load(),
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
-  }, [user, loc.pathname]);
+    const refresh = () => setCount(cartCount());
+    refresh();
+    return subscribeCart(refresh);
+  }, []);
 
-  const items = isFarmer
-    ? [
-        { to: "/home", label: "Home", icon: Home },
-        { to: "/my-listings", label: "Listings", icon: Package },
-        { to: "/manage-orders", label: "Orders", icon: ShoppingBag },
-        { to: "/notifications", label: "Alerts", icon: Bell },
-        { to: "/profile", label: "Me", icon: User },
-      ]
-    : [
-        { to: "/home", label: "Home", icon: Home },
-        { to: "/bundles", label: "Bundles", icon: Package },
-        { to: "/orders", label: "Orders", icon: ShoppingBag },
-        { to: "/notifications", label: "Alerts", icon: Bell },
-        { to: "/profile", label: "Me", icon: User },
-      ];
+  const items = [
+    { to: "/", label: "Home", icon: Home, match: (p: string) => p === "/" },
+    { to: "/search", label: "Search", icon: Search, match: (p: string) => p.startsWith("/search") },
+    { to: "/cart", label: "Cart", icon: ShoppingCart, badge: count, match: (p: string) => p.startsWith("/cart") },
+    { to: "/orders", label: "Orders", icon: Package, match: (p: string) => p.startsWith("/orders") },
+    { to: "/account", label: "Account", icon: User, match: (p: string) => p.startsWith("/account") || p.startsWith("/login") || p.startsWith("/signup") },
+  ] as const;
 
   return (
     <nav className="fixed bottom-0 inset-x-0 z-50 bg-card border-t border-border">
       <div className="mx-auto max-w-md grid grid-cols-5">
         {items.map((it) => {
-          const active = loc.pathname.startsWith(it.to);
+          const active = it.match(loc.pathname);
           const Icon = it.icon;
-          const showBadge = it.to === "/notifications" && unread > 0;
           return (
-            <Link
-              key={it.to}
-              to={it.to}
-              className={cn(
-                "flex flex-col items-center justify-center py-2 gap-1 text-xs",
-                active ? "text-primary" : "text-muted-foreground",
-              )}
-            >
+            <Link key={it.to} to={it.to} className={cn("flex flex-col items-center justify-center py-2 gap-1 text-xs", active ? "text-primary" : "text-muted-foreground")}>
               <span className="relative">
-                <Icon className={cn("h-5 w-5", active && "drop-shadow-[0_0_8px_currentColor]")} />
-                {showBadge && (
-                  <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
-                    {unread > 9 ? "9+" : unread}
+                <Icon className="h-5 w-5" />
+                {"badge" in it && it.badge > 0 && (
+                  <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
+                    {it.badge > 9 ? "9+" : it.badge}
                   </span>
                 )}
               </span>
