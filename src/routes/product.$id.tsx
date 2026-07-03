@@ -10,7 +10,7 @@ import { toast } from "sonner";
 
 type Product = { id: string; name: string; photo_url: string | null; price: number; quantity: number; vendor: { name: string } | null };
 
-export const Route = createFileRoute("/product/")({ component: ProductPage });
+export const Route = createFileRoute("/product/$id")({ component: ProductPage });
 
 function ProductPage() {
   const { id } = useParams({ from: "/product/$id" });
