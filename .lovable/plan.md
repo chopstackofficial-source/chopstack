@@ -1,106 +1,104 @@
+# Chopstack Rebuild — Hyperlocal Grocery Ordering
 
-# ChopStack feature rollout — 3 phases
+Complete redesign around zones, cart-first browsing, Paystack escrow + split, and admin-managed vendors. Keeps existing logo/splash. Uses current Supabase + TanStack Start stack.
 
-Sequenced to minimize regressions. Each phase ends in a working app you can test before moving on. I'll deliver one phase per turn so you can verify before the next batch.
+## Data model (new / replaced)
 
----
+Wipes legacy `listings/splits/bundles/split_participants` in favor of a clean schema. Keeps `users` for auth, adds role fields.
 
-## Phase A — Foundations (this turn after approval)
+- `zones` — id, name, delivery_fee, active
+- `vendors` — id (=auth user), name, phone, email, bank_name, account_number, account_name, paystack_subaccount_code, paystack_recipient_code, status (pending/approved/suspended), rejection_reason
+- `products` — id, vendor_id, name, photo_url, price, quantity, is_sold_out
+- `product_zones` — product_id, zone_id
+- `buyers` — id (=auth user), name, phone, email, zone_id
+- `orders` — id, order_number (5-digit unique), buyer_id, vendor_id, zone_id, subtotal, delivery_fee, total, payment_reference, payment_status, escrow_status (held/released/disputed/refunded), delivery_status (pending/packed/out_for_delivery/delivered/cancelled), delivered_at, escrow_release_at, created_at
+- `order_items` — id, order_id, product_id, name_snapshot, unit_price, quantity, fulfilled_quantity, refund_amount
+- `disputes` — id, order_id, buyer_id, reason, status, resolution, created_at
+- `notifications` — id, user_id, user_type, title, body, deeplink, is_read, created_at
+- `user_roles` — reuse existing (`admin`, `vendor`, `buyer`)
 
-**Buyer default delivery address**
-- Add `town`, `landmark` columns to `users` (state/lga already exist)
-- Edit-profile form gains Town + Landmark fields
-- Checkout pre-fills State/LGA/Town/Landmark from profile with a "Change for this order" toggle that overrides per-order only
+RLS everywhere; GRANTs to authenticated/service_role. Anon SELECT only on `zones` + approved-vendor `products` + their zones (for guest browsing).
 
-**Vendor listing fields**
-- Add `available_today` (bool), `town` (text) to `listings` (`quantity_available` already exists)
-- create-listing & my-listings forms expose the new fields
-- Browse filters: "Available today" toggle, Town filter
+Order number = zero-padded 5-digit from a Postgres sequence starting at 10000, with unique index. Cart stays in `cart_items` (already planned).
 
-**Order flow — accept/reject + timers + slots**
-- Add to `orders`: `reject_reason`, `accepted_at`, `delivery_slot` (enum: now, 10-12, 12-2, 2-4, 4-6, 6-8)
-- Vendor manage-orders gets Accept / Reject (with reason) buttons. Phone numbers on order detail hidden until `status='accepted'`.
-- Checkout adds delivery-slot picker
-- pg_cron jobs (every 5 min) hitting `/api/public/hooks/order-timers`:
-  - pending > 2h → auto-cancel + refund (if paid) + notify
-  - accepted & delivered, no buyer confirm > 6h → auto-release escrow
-  - accepted > 48h with no activity → auto-complete + release
-- All actions write `notifications` rows
+## Buyer flow
 
-**Terms & Conditions**
-- New `terms_accepted_at` column on `users`
-- Static `/terms` route with the full T&C content (packaging, escrow, 4% commission, delivery split, disputes, suspension, liability, privacy)
-- Signup form requires checkbox + records timestamp; vendors/transporters blocked from creating listings until accepted
+- **Guest browse**: `/` shows zone picker (persist in `localStorage` until account), search bar "What do you need?", live feed filtered to zone. Only `is_sold_out=false` AND `quantity>0` AND vendor approved.
+- **Product card**: photo, name, ₦ price, qty, vendor name. Tap → detail → add to cart.
+- **Cart**: grouped by vendor, subtotal, single flat delivery fee (buyer's zone), total. Checkout prompts auth if guest.
+- **Onboarding (signup)**: name, phone, email, password, zone (dropdown from `zones`). Persisted to `buyers`.
+- **Checkout**: Paystack inline with `split_code` (dynamic multi-split when >1 vendor) or `subaccount` (single vendor). Server verifies + creates orders (one per vendor) sharing the same order_number prefix — actually one order_number per vendor order for clarity. Escrow marked `held`.
+- **Order status**: Pending → Packed → Out for Delivery → Delivered. 24h countdown after delivered with Confirm / Dispute buttons.
+- **History**: list past orders, delete allowed once escrow resolved.
 
-**Deliverable:** App still works for current buyer/farmer flows; new fields visible; timers running.
+## Vendor flow
 
----
+- Signup collects bank details → status `pending`.
+- Admin approval creates Paystack subaccount + transfer recipient via server fn.
+- Dashboard: pending orders list, product list.
+- **Add product** form (5 fields): photo, name, price, qty, zones (multi-select).
+- Product row: Sold Out toggle, Edit, Delete.
+- **Order actions**: update status; Partial fulfil (per-item fulfilled qty → auto Paystack refund for delta); Cancel (full refund); Mark Delivered (starts 24h); Delete after resolved.
 
-## Phase B — Transporter, cart, storefront, Google Maps
+## Admin flow
 
-**Transporter account type**
-- Extend `account_type` enum → `'buyer' | 'farmer' | 'transporter'`
-- New `transporters` profile table: `nin`, `vehicle_type` (bike/keke/taxi/minivan), `vehicle_photo_url`, `coverage_state`, `coverage_lga`, `bank_*` (reuse pattern from vendors), `is_online`, `failed_deliveries_count`, `suspended_at`
-- Signup form: role picker now shows 3 options. Transporter signup collects NIN + vehicle + photo upload (new `transporter-docs` bucket) + bank + coverage + T&C
-- Transporter dashboard: online/offline toggle, active job, earnings, rating
+- `/admin` gated by `has_role(admin)`.
+- Zones CRUD (name + delivery fee).
+- Vendors: approve / reject (with reason) / suspend. Shows bank details.
+- Orders overview across all vendors.
+- Disputes queue: release to vendor OR refund buyer (Paystack refund API).
 
-**Google Maps integration**
-- Trigger `standard_connectors--connect` for `google_maps`
-- Server fn `quoteDeliveryFee({pickup, dropoff, vehicleType})` calls Distance Matrix via gateway → returns km × rate (bike 350, keke 450, taxi 650, minivan 800)
-- Checkout shows live delivery fee when delivery slot is picked
-- Fee added to escrow on payment; on completion, split 80/20 transporter/ChopStack via Paystack transfer (extends existing `escrow.functions.ts`)
+## Payments (Paystack)
 
-**Auto-assignment**
-- On vendor accept, server fn picks nearest online transporter in coverage area, creates assignment row, 15-min timer; on timeout/decline → next nearest
-- Buyer sees transporter name+phone once assigned; vendor confirms handoff button on order detail
-- Transporter ratings table (1-5) shown after completion; 3 failed → auto-suspend
+Server fns in `src/lib/payments.functions.ts`:
+- `createSubaccount(vendorId)` — on admin approval.
+- `createRecipient(vendorId)` — on admin approval (transfers).
+- `initCheckout(cartSnapshot, zoneId)` — computes per-vendor splits, creates pending orders, returns `access_code` + reference for Paystack inline.
+- `verifyPayment(reference)` — marks paid + escrow held.
+- `partialRefund(orderId, amount)` / `fullRefund(orderId)` — Paystack `/refund`.
+- `releaseEscrow(orderId)` — Paystack `/transfer` to vendor recipient.
 
-**Cart + storefront + bundles**
-- New `cart_items` table (user_id, listing_id, qty, unique per user+listing) — RLS scoped to user
-- Cart icon in BottomNav with badge count
-- "Build Your Bundle" page = cart view scoped to one vendor with live subtotal
-- New `/store/$vendorId` route: profile card, rating, location, last_active (add `last_active_at` to users), active listings grid
-- "View Store" link on every listing card
-- Checkout from cart creates one order per vendor (multi-vendor split)
+Escrow auto-release: pg_cron every 15 min → `/api/public/hooks/escrow-release` route → releases orders with `delivered_at + 24h < now()` and `escrow_status='held'`.
 
-**Deliverable:** End-to-end delivery from cart → payment → assigned transporter → completion with payouts.
+## Notifications
 
----
+In-app `notifications` table + toast on next fetch. Deep links via TanStack Router `to`. Web Push (VAPID) is deferred — noted in code with TODO, but every event writes a notification row so the badge + list work day one.
 
-## Phase C — Group buy, search, admin, polish
+## Routes (TanStack Start)
 
-**Group buy completion**
-- Audit existing `splits` table — fill gaps: pickup_date, pickup_time, attendance_confirmed
-- pg_cron 2h reminder before pickup_time → notifications to all participants
-- "Confirm attendance" button on order page
-- Pay-on-collection (no escrow, no commission — already supported via `cash_at_meetup`)
-- Vendor-cancel: bulk-notify + refund any prepaid
-- Browse tab: Group Buys section with progress bar
+Replace/add:
+- `/` — home (guest OK), zone picker + feed + search
+- `/product/$id`
+- `/cart`
+- `/checkout` — auth gate
+- `/orders` / `/orders/$id`
+- `/signup`, `/login`, `/onboarding` (zone select)
+- `/vendor` (dashboard), `/vendor/products/new`, `/vendor/products/$id/edit`, `/vendor/orders/$id`, `/vendor/signup`, `/vendor/pending`
+- `/admin`, `/admin/zones`, `/admin/vendors`, `/admin/orders`, `/admin/disputes`
 
-**Search & filters**
-- Single `/search?q=` route querying listings, users (vendor stores), bundles, splits
-- Bundle filters: price range slider + category dropdown
+Public routes stay SSR; vendor/admin under `_authenticated/`.
 
-**Admin dashboard** (`/admin`, gated by `has_role(uid, 'admin')` — already wired for chopstackofficial@gmail.com)
-- Stats cards: total orders, GMV, active users, completed deliveries (server fn aggregates)
-- Orders table with manual Release / Refund buttons (calls existing escrow fns with admin override)
-- Users table with Suspend / Reactivate
-- Disputes table (existing `disputes` table) with resolution actions
-- Delivery-rate editor: new `delivery_rates` table (vehicle_type, naira_per_km) read by quote function
+## UI
 
-**Deliverable:** Full marketplace.
+Mobile-first, bold product tiles, big ₦ prices, minimal chrome. Keep existing logo + splash + favicon. Use `sonner` toasts. BottomNav: Home, Search, Cart (with badge), Orders, Account.
 
----
+## Build phases (in order)
 
-## Technical notes (skip if not needed)
+1. **Schema migration** — drop legacy tables, create new ones, seed 3 sample zones, sequence, RLS/GRANTs, admin bootstrap.
+2. **Buyer core** — home/zone/feed/search/product/cart/checkout stub (no Paystack yet, marks paid), orders list/detail with escrow UI.
+3. **Vendor core** — signup, pending screen, product CRUD, orders dashboard w/ status + partial + cancel + deliver.
+4. **Admin** — zones, vendor approval, orders, disputes.
+5. **Paystack** — subaccount + split checkout + verify + refund + transfer + pg_cron escrow release.
+6. **Polish** — notifications UI, order numbers on all screens, empty states, favicon.
 
-- All new tables get `GRANT` blocks + RLS scoped to owner; admin sees all via `has_role`.
-- All server-side logic uses `createServerFn` (no edge functions). Cron endpoints under `/api/public/hooks/*` with `apikey` header pattern.
-- Google Maps connector: server-side gateway calls only; no browser key needed for Distance Matrix.
-- Paystack transfers extended to handle transporter payouts using same auto-transfer-when-bank-present rule.
-- No changes to `client.ts`, `types.ts`, or `routeTree.gen.ts` (auto-managed).
-- Existing Cloudflare Worker deploy continues to work — no `server.ts` changes.
+## Technical notes
 
----
+- Order number: `CREATE SEQUENCE order_number_seq START 10000;` default `LPAD(nextval::text, 5, '0')`. Overflow past 99999 handled by widening later.
+- Split payment: use Paystack "Multi-split" via dynamic split creation per checkout when >1 vendor; single-vendor uses `subaccount`. Vendors without subaccount block checkout of their products.
+- Refunds: instant Paystack refund; buyer notification includes new order total.
+- Escrow cron: `pg_cron` + `pg_net` → `/api/public/hooks/escrow-release` with `apikey` header.
+- Guest cart: same `cart_items` table keyed by anon session id in `localStorage`; on signup, migrate rows to `user_id`.
+- Keep current auth (Supabase email/password + Google). No changes to auth-attacher / middleware.
+- Delete unused: bundles/*, splits, transporter code from prior plan (out of scope now).
 
-**Next step:** I implement Phase A end-to-end in the next turn. Reply "implement" or tell me what to adjust.
+Approve to start with Phase 1 (schema migration).
