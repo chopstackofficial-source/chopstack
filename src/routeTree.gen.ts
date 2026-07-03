@@ -9,14 +9,26 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VendorRouteImport } from './routes/vendor'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as CartRouteImport } from './routes/cart'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AccountRouteImport } from './routes/account'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as OrdersIndexRouteImport } from './routes/orders.index'
+import { Route as VendorSignupRouteImport } from './routes/vendor.signup'
+import { Route as VendorPendingRouteImport } from './routes/vendor.pending'
 import { Route as ProductIdRouteImport } from './routes/product.$id'
+import { Route as OrdersIdRouteImport } from './routes/orders.$id'
 
+const VendorRoute = VendorRouteImport.update({
+  id: '/vendor',
+  path: '/vendor',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
@@ -42,87 +54,171 @@ const CartRoute = CartRouteImport.update({
   path: '/cart',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountRoute = AccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const OrdersIndexRoute = OrdersIndexRouteImport.update({
+  id: '/orders/',
+  path: '/orders/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VendorSignupRoute = VendorSignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => VendorRoute,
+} as any)
+const VendorPendingRoute = VendorPendingRouteImport.update({
+  id: '/pending',
+  path: '/pending',
+  getParentRoute: () => VendorRoute,
 } as any)
 const ProductIdRoute = ProductIdRouteImport.update({
   id: '/product/$id',
   path: '/product/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OrdersIdRoute = OrdersIdRouteImport.update({
+  id: '/orders/$id',
+  path: '/orders/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
+  '/admin': typeof AdminRoute
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRoute
   '/login': typeof LoginRoute
   '/search': typeof SearchRoute
   '/signup': typeof SignupRoute
+  '/vendor': typeof VendorRouteWithChildren
+  '/orders/$id': typeof OrdersIdRoute
   '/product/$id': typeof ProductIdRoute
+  '/vendor/pending': typeof VendorPendingRoute
+  '/vendor/signup': typeof VendorSignupRoute
+  '/orders/': typeof OrdersIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
+  '/admin': typeof AdminRoute
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRoute
   '/login': typeof LoginRoute
   '/search': typeof SearchRoute
   '/signup': typeof SignupRoute
+  '/vendor': typeof VendorRouteWithChildren
+  '/orders/$id': typeof OrdersIdRoute
   '/product/$id': typeof ProductIdRoute
+  '/vendor/pending': typeof VendorPendingRoute
+  '/vendor/signup': typeof VendorSignupRoute
+  '/orders': typeof OrdersIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
+  '/admin': typeof AdminRoute
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRoute
   '/login': typeof LoginRoute
   '/search': typeof SearchRoute
   '/signup': typeof SignupRoute
+  '/vendor': typeof VendorRouteWithChildren
+  '/orders/$id': typeof OrdersIdRoute
   '/product/$id': typeof ProductIdRoute
+  '/vendor/pending': typeof VendorPendingRoute
+  '/vendor/signup': typeof VendorSignupRoute
+  '/orders/': typeof OrdersIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/account'
+    | '/admin'
     | '/cart'
     | '/checkout'
     | '/login'
     | '/search'
     | '/signup'
+    | '/vendor'
+    | '/orders/$id'
     | '/product/$id'
+    | '/vendor/pending'
+    | '/vendor/signup'
+    | '/orders/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/account'
+    | '/admin'
     | '/cart'
     | '/checkout'
     | '/login'
     | '/search'
     | '/signup'
+    | '/vendor'
+    | '/orders/$id'
     | '/product/$id'
+    | '/vendor/pending'
+    | '/vendor/signup'
+    | '/orders'
   id:
     | '__root__'
     | '/'
+    | '/account'
+    | '/admin'
     | '/cart'
     | '/checkout'
     | '/login'
     | '/search'
     | '/signup'
+    | '/vendor'
+    | '/orders/$id'
     | '/product/$id'
+    | '/vendor/pending'
+    | '/vendor/signup'
+    | '/orders/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AccountRoute: typeof AccountRoute
+  AdminRoute: typeof AdminRoute
   CartRoute: typeof CartRoute
   CheckoutRoute: typeof CheckoutRoute
   LoginRoute: typeof LoginRoute
   SearchRoute: typeof SearchRoute
   SignupRoute: typeof SignupRoute
+  VendorRoute: typeof VendorRouteWithChildren
+  OrdersIdRoute: typeof OrdersIdRoute
   ProductIdRoute: typeof ProductIdRoute
+  OrdersIndexRoute: typeof OrdersIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/vendor': {
+      id: '/vendor'
+      path: '/vendor'
+      fullPath: '/vendor'
+      preLoaderRoute: typeof VendorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/signup': {
       id: '/signup'
       path: '/signup'
@@ -158,12 +254,47 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CartRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/account': {
+      id: '/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AccountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/orders/': {
+      id: '/orders/'
+      path: '/orders'
+      fullPath: '/orders/'
+      preLoaderRoute: typeof OrdersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/vendor/signup': {
+      id: '/vendor/signup'
+      path: '/signup'
+      fullPath: '/vendor/signup'
+      preLoaderRoute: typeof VendorSignupRouteImport
+      parentRoute: typeof VendorRoute
+    }
+    '/vendor/pending': {
+      id: '/vendor/pending'
+      path: '/pending'
+      fullPath: '/vendor/pending'
+      preLoaderRoute: typeof VendorPendingRouteImport
+      parentRoute: typeof VendorRoute
     }
     '/product/$id': {
       id: '/product/$id'
@@ -172,17 +303,42 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProductIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/orders/$id': {
+      id: '/orders/$id'
+      path: '/orders/$id'
+      fullPath: '/orders/$id'
+      preLoaderRoute: typeof OrdersIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
+interface VendorRouteChildren {
+  VendorPendingRoute: typeof VendorPendingRoute
+  VendorSignupRoute: typeof VendorSignupRoute
+}
+
+const VendorRouteChildren: VendorRouteChildren = {
+  VendorPendingRoute: VendorPendingRoute,
+  VendorSignupRoute: VendorSignupRoute,
+}
+
+const VendorRouteWithChildren =
+  VendorRoute._addFileChildren(VendorRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AccountRoute: AccountRoute,
+  AdminRoute: AdminRoute,
   CartRoute: CartRoute,
   CheckoutRoute: CheckoutRoute,
   LoginRoute: LoginRoute,
   SearchRoute: SearchRoute,
   SignupRoute: SignupRoute,
+  VendorRoute: VendorRouteWithChildren,
+  OrdersIdRoute: OrdersIdRoute,
   ProductIdRoute: ProductIdRoute,
+  OrdersIndexRoute: OrdersIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

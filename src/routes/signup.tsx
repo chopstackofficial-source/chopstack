@@ -1,113 +1,71 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { writeZoneId } from "@/lib/zone";
 import logo from "@/assets/logo.png";
-import { ThemeToggle } from "@/components/app/ThemeToggle";
-import { peekAuthMessage, consumeAuthRedirect } from "@/lib/auth-guard";
 
 export const Route = createFileRoute("/signup")({ component: Signup });
 
+type Zone = { id: string; name: string };
+
 function Signup() {
-  const navigate = useNavigate();
-  const [form, setForm] = useState({ full_name: "", email: "", password: "", confirm: "" });
-  const [accountType, setAccountType] = useState<"buyer" | "farmer">("buyer");
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const nav = useNavigate();
+  const [f, setF] = useState({ name: "", email: "", phone: "", password: "", zone_id: "" });
+  const [zones, setZones] = useState<Zone[]>([]);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    setMessage(peekAuthMessage());
+    supabase.from("zones").select("id,name").eq("active", true).order("name").then(({ data }) => {
+      setZones((data ?? []) as Zone[]);
+      if (data && data[0] && !f.zone_id) setF((p) => ({ ...p, zone_id: data[0].id }));
+    });
   }, []);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (form.password !== form.confirm) return toast.error("Passwords do not match");
-    if (form.password.length < 6) return toast.error("Password must be at least 6 characters");
-    if (!acceptedTerms) return toast.error("Please accept the Terms & Conditions");
-    setLoading(true);
+    if (f.password.length < 6) return toast.error("Password too short");
+    setBusy(true);
     const { data, error } = await supabase.auth.signUp({
-      email: form.email,
-      password: form.password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/`,
-        data: { full_name: form.full_name, account_type: accountType },
-      },
+      email: f.email, password: f.password,
+      options: { emailRedirectTo: `${window.location.origin}/`, data: { name: f.name } },
     });
-    setLoading(false);
-    if (error) return toast.error(error.message);
-    // Record T&C acceptance timestamp (best-effort; profile row is created by trigger)
+    if (error) { setBusy(false); return toast.error(error.message); }
     if (data.user) {
-      supabase.from("users").update({ terms_accepted_at: new Date().toISOString() }).eq("id", data.user.id).then(() => {});
+      await supabase.from("buyers").insert({ id: data.user.id, name: f.name, email: f.email, phone: f.phone || null, zone_id: f.zone_id || null });
+      if (f.zone_id) writeZoneId(f.zone_id);
     }
-    if (data.session) {
-      toast.success("Welcome to CHOPSTACK!");
-      const redirectTo = consumeAuthRedirect();
-      navigate({ to: redirectTo ?? (accountType === "farmer" ? "/dashboard" : "/home") });
-    } else {
-      toast.success("Check your email to verify your account");
-      navigate({ to: "/login" });
-    }
+    setBusy(false);
+    if (data.session) { toast.success("Welcome!"); nav({ to: "/" }); }
+    else { toast.success("Check your email to verify"); nav({ to: "/login" }); }
   };
 
   return (
     <div className="min-h-screen bg-background p-6 max-w-md mx-auto">
-      <div className="flex justify-end">
-        <ThemeToggle />
+      <div className="flex flex-col items-center pt-6 mb-6">
+        <img src={logo} alt="" className="w-16 h-16" />
+        <h1 className="text-2xl font-black mt-2"><span>CHOP</span><span className="text-primary">STACK</span></h1>
       </div>
-      <div className="flex flex-col items-center mb-6 pt-6">
-        <img src={logo} alt="CHOPSTACK" className="w-16 h-16 object-contain" />
-        <h1 className="text-2xl font-black mt-2"><span className="text-foreground">CHOP</span><span className="text-primary">STACK</span></h1>
-      </div>
-      <h2 className="text-2xl font-bold mb-6">Create your account</h2>
-      {message && (
-        <div className="mb-4 rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-sm text-foreground">
-          {message}
+      <h2 className="text-xl font-bold mb-4">Create your account</h2>
+      <form onSubmit={submit} className="space-y-3">
+        <div><Label>Full name</Label><Input required value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} /></div>
+        <div><Label>Email</Label><Input type="email" required value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} /></div>
+        <div><Label>Phone</Label><Input value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} /></div>
+        <div><Label>Password</Label><Input type="password" required value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} /></div>
+        <div>
+          <Label>Your delivery zone</Label>
+          <select required className="w-full h-10 rounded-md bg-input border border-border px-3" value={f.zone_id} onChange={(e) => setF({ ...f, zone_id: e.target.value })}>
+            {zones.map((z) => <option key={z.id} value={z.id}>{z.name}</option>)}
+          </select>
+          <p className="text-xs text-muted-foreground mt-1">You'll only see stock available in your zone.</p>
         </div>
-      )}
-
-      <div className="grid grid-cols-2 gap-2 mb-6 bg-card p-1 rounded-lg border border-border">
-        {(["buyer", "farmer"] as const).map((t) => (
-          <button
-            key={t}
-            type="button"
-            onClick={() => setAccountType(t)}
-            className={`py-2.5 rounded-md text-sm font-medium capitalize transition ${
-              accountType === t ? "bg-primary text-primary-foreground shadow-[var(--glow-primary)]" : "text-muted-foreground"
-            }`}
-          >
-            {t === "farmer" ? "Farmer / Vendor" : "Buyer"}
-          </button>
-        ))}
-      </div>
-
-      <form onSubmit={submit} className="space-y-4">
-        <div><Label>Full name</Label><Input required value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} /></div>
-        <div><Label>Email</Label><Input type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
-        <div><Label>Password</Label><Input type="password" required value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} /></div>
-        <div><Label>Confirm password</Label><Input type="password" required value={form.confirm} onChange={(e) => setForm({ ...form, confirm: e.target.value })} /></div>
-        <label className="flex items-start gap-2 text-sm">
-          <input
-            type="checkbox"
-            className="mt-1 accent-primary"
-            checked={acceptedTerms}
-            onChange={(e) => setAcceptedTerms(e.target.checked)}
-            required
-          />
-          <span className="text-muted-foreground">
-            I have read and agree to the{" "}
-            <Link to="/terms" target="_blank" className="text-primary underline">Terms & Conditions</Link>
-            {accountType === "farmer" && ", including packaging standards, the 4% commission, escrow, and dispute policy"}.
-          </span>
-        </label>
-        <Button type="submit" size="lg" className="w-full" disabled={loading}>{loading ? "Creating..." : "Sign Up"}</Button>
+        <Button type="submit" size="lg" className="w-full" disabled={busy}>{busy ? "Creating…" : "Sign up"}</Button>
       </form>
-      <p className="text-center text-sm text-muted-foreground mt-6">
-        Have an account? <Link to="/login" className="text-primary font-medium">Log in</Link>
-      </p>
+      <p className="text-center text-sm text-muted-foreground mt-4">Have an account? <Link to="/login" className="text-primary font-medium">Log in</Link></p>
+      <p className="text-center text-xs text-muted-foreground mt-6">Selling produce? <Link to="/vendor/signup" className="text-primary">Register as a vendor</Link></p>
     </div>
   );
 }
