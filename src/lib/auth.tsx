@@ -4,8 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type UserRole = "admin" | "vendor" | "buyer" | null;
 
-export type BuyerProfile = { id: string; name: string; email: string; phone: string | null; zone_id: string | null };
-export type VendorProfile = { id: string; name: string; email: string; phone: string; status: string; rejection_reason: string | null };
+export type BuyerProfile = { id: string; name: string; email: string; phone: string | null; zone_id: string | null; delivery_address: string | null };
+export type VendorProfile = { id: string; name: string; email: string; phone: string; status: string; photo_url: string | null };
 
 type AuthCtx = {
   user: User | null;
@@ -28,8 +28,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const load = useCallback(async (uid: string) => {
     const [rolesRes, buyerRes, vendorRes] = await Promise.all([
       supabase.from("user_roles").select("role").eq("user_id", uid),
-      supabase.from("buyers").select("id,name,email,phone,zone_id").eq("id", uid).maybeSingle(),
-      supabase.from("vendors").select("id,name,email,phone,status,rejection_reason").eq("id", uid).maybeSingle(),
+      supabase.from("buyers").select("id,name,email,phone,zone_id,delivery_address").eq("id", uid).maybeSingle(),
+      supabase.from("vendors").select("id,name,email,phone,status,photo_url").eq("id", uid).maybeSingle(),
     ]);
     const roles = (rolesRes.data ?? []).map((r) => r.role);
     setRole(roles.includes("admin") ? "admin" : roles.includes("vendor") ? "vendor" : "buyer");
