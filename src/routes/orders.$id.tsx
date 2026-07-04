@@ -9,7 +9,11 @@ import { toast } from "sonner";
 type OrderItem = { id: string; name_snapshot: string; unit_price: number; quantity: number };
 type Order = { id: string; order_number: string; total: number; subtotal: number; delivery_fee: number; delivery_status: string; escrow_status: string; payment_status: string; delivered_at: string | null; vendor: { name: string } | null; items: OrderItem[] };
 
-const STEPS = ["pending", "packed", "out_for_delivery", "delivered"];
+const STEPS: { key: string; label: string }[] = [
+  { key: "confirmed", label: "Confirmed" },
+  { key: "on_the_way", label: "On the way" },
+  { key: "delivered", label: "Delivered" },
+];
 
 export const Route = createFileRoute("/orders/$id")({ component: OrderDetail });
 function OrderDetail() {
@@ -39,7 +43,7 @@ function OrderDetail() {
   };
 
   if (!o) return <MobileShell><div className="p-6 text-sm text-muted-foreground">Loading…</div></MobileShell>;
-  const stepIdx = STEPS.indexOf(o.delivery_status);
+  const stepIdx = STEPS.findIndex((s) => s.key === o.delivery_status);
   return (
     <MobileShell>
       <header className="px-4 py-3 border-b border-border">
@@ -51,9 +55,9 @@ function OrderDetail() {
         <div className="bg-card border border-border rounded-2xl p-4">
           <div className="flex justify-between">
             {STEPS.map((s, i) => (
-              <div key={s} className="flex flex-col items-center flex-1">
+              <div key={s.key} className="flex flex-col items-center flex-1">
                 <div className={`w-6 h-6 rounded-full grid place-items-center text-[10px] ${i <= stepIdx ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>{i + 1}</div>
-                <div className="text-[10px] mt-1 text-center capitalize">{s.replaceAll("_", " ")}</div>
+                <div className="text-[10px] mt-1 text-center">{s.label}</div>
               </div>
             ))}
           </div>
@@ -71,7 +75,7 @@ function OrderDetail() {
         </div>
         {o.delivery_status === "delivered" && o.escrow_status === "held" && (
           <div className="space-y-2">
-            <p className="text-xs text-muted-foreground text-center">Confirm delivery to release payment, or open a dispute within 24 hours.</p>
+            <p className="text-xs text-muted-foreground text-center">Confirm delivery to release payment, or open a dispute within 4 hours.</p>
             <Button className="w-full" onClick={confirm}>Confirm delivery</Button>
             <Button className="w-full" variant="outline" onClick={dispute}>Open dispute</Button>
           </div>
