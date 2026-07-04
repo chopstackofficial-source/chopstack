@@ -17,6 +17,7 @@ export type Database = {
       buyers: {
         Row: {
           created_at: string
+          delivery_address: string | null
           email: string
           id: string
           name: string
@@ -26,6 +27,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          delivery_address?: string | null
           email: string
           id: string
           name: string
@@ -35,6 +37,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          delivery_address?: string | null
           email?: string
           id?: string
           name?: string
@@ -469,6 +472,7 @@ export type Database = {
           paystack_recipient_code: string | null
           paystack_subaccount_code: string | null
           phone: string
+          photo_url: string | null
           rejection_reason: string | null
           status: string
           updated_at: string
@@ -484,6 +488,7 @@ export type Database = {
           paystack_recipient_code?: string | null
           paystack_subaccount_code?: string | null
           phone: string
+          photo_url?: string | null
           rejection_reason?: string | null
           status?: string
           updated_at?: string
@@ -499,6 +504,7 @@ export type Database = {
           paystack_recipient_code?: string | null
           paystack_subaccount_code?: string | null
           phone?: string
+          photo_url?: string | null
           rejection_reason?: string | null
           status?: string
           updated_at?: string
@@ -537,6 +543,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      gen_order_number: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
