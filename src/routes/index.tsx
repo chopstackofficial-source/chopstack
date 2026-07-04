@@ -4,8 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { MobileShell } from "@/components/app/BottomNav";
 import { readZoneId, writeZoneId } from "@/lib/zone";
 import { addToCart } from "@/lib/cart";
+import { aiSearchProducts } from "@/lib/ai-search.functions";
 import { formatPrice } from "@/lib/format";
-import { Search, MapPin, ChevronDown, Plus, Check } from "lucide-react";
+import { Search, MapPin, ChevronDown, Plus, Check, Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 
@@ -22,6 +23,8 @@ function Home() {
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(true);
   const [added, setAdded] = useState<Record<string, boolean>>({});
+  const [ai, setAi] = useState<{ query: string; loading: boolean; message: string; matches: { productId: string; reason: string }[] } | null>(null);
+  const [aiInput, setAiInput] = useState("");
 
   useEffect(() => {
     supabase.from("zones").select("id,name,delivery_fee").eq("active", true).order("name").then(({ data }) => {
@@ -58,6 +61,24 @@ function Home() {
     setTimeout(() => setAdded((s) => ({ ...s, [p.id]: false })), 1200);
   };
 
+  const RATE_KEY = "cs_ai_search_count_v1";
+  const askAi = async () => {
+    const q = aiInput.trim();
+    if (!q || !zoneId) return;
+    const used = Number(localStorage.getItem(RATE_KEY) ?? "0");
+    if (used >= 10) { toast.error("You've hit the search limit for this session."); return; }
+    setAi({ query: q, loading: true, message: "", matches: [] });
+    try {
+      const res = await aiSearchProducts({ data: { zoneId, query: q.slice(0, 100) } });
+      localStorage.setItem(RATE_KEY, String(used + 1));
+      setAi({ query: q, loading: false, message: res.message, matches: res.matches });
+    } catch (e) {
+      setAi({ query: q, loading: false, message: (e as Error).message, matches: [] });
+    }
+  };
+
+  const aiProducts = ai ? products.filter((p) => ai.matches.some((m) => m.productId === p.id)) : [];
+
   return (
     <MobileShell>
       <header className="sticky top-0 z-40 bg-background/95 backdrop-blur border-b border-border">
@@ -81,15 +102,59 @@ function Home() {
             </div>
           </div>
         )}
-        <div className="px-4 pb-3">
+        <div className="px-4 pb-3 space-y-2">
+          <form onSubmit={(e) => { e.preventDefault(); askAi(); }} className="relative">
+            <Sparkles className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
+            <input value={aiInput} maxLength={100} onChange={(e) => setAiInput(e.target.value)} placeholder="What do you need? Ask anything…" className="w-full h-11 pl-10 pr-20 rounded-full bg-primary/10 border border-primary/30 text-sm outline-none focus:border-primary" />
+            <button type="submit" disabled={!aiInput.trim()} className="absolute right-1.5 top-1/2 -translate-y-1/2 h-8 px-3 rounded-full bg-primary text-primary-foreground text-xs font-semibold disabled:opacity-50">Ask</button>
+          </form>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="What do you need?" className="w-full h-11 pl-10 pr-3 rounded-full bg-muted/60 border border-border text-sm outline-none focus:border-primary" />
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Or search by name" className="w-full h-10 pl-10 pr-3 rounded-full bg-muted/60 border border-border text-sm outline-none focus:border-primary" />
           </div>
         </div>
       </header>
 
       <main className="px-3 py-3">
+        {ai && (
+          <div className="mb-4 p-3 bg-primary/5 border border-primary/20 rounded-2xl">
+            <div className="flex items-start gap-2 mb-2">
+              <Sparkles className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="text-xs text-muted-foreground">You asked</div>
+                <div className="text-sm font-medium">"{ai.query}"</div>
+              </div>
+              <button onClick={() => { setAi(null); setAiInput(""); }} className="text-xs text-muted-foreground">Clear</button>
+            </div>
+            {ai.loading ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="w-4 h-4 animate-spin" /> Thinking…</div>
+            ) : (
+              <>
+                <p className="text-sm mb-2">{ai.message}</p>
+                {aiProducts.length > 0 && (
+                  <div className="grid grid-cols-2 gap-2">
+                    {aiProducts.map((p) => (
+                      <div key={p.id} className="bg-card rounded-xl border border-border overflow-hidden">
+                        <Link to="/product/$id" params={{ id: p.id }} className="block aspect-square bg-muted overflow-hidden">
+                          {p.photo_url && <img src={p.photo_url} alt={p.name} className="w-full h-full object-cover" />}
+                        </Link>
+                        <div className="p-2">
+                          <div className="text-xs font-semibold line-clamp-1">{p.name}</div>
+                          <div className="flex items-center justify-between mt-1">
+                            <span className="text-sm font-black text-primary">{formatPrice(Number(p.price))}</span>
+                            <button onClick={() => handleAdd(p)} className="w-7 h-7 rounded-full bg-primary text-primary-foreground grid place-items-center">
+                              {added[p.id] ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
         {loading ? (
           <div className="grid grid-cols-2 gap-3">{Array.from({ length: 6 }).map((_, i) => <div key={i} className="aspect-square bg-muted rounded-2xl animate-pulse" />)}</div>
         ) : products.length === 0 ? (
