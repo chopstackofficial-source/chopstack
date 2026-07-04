@@ -78,12 +78,10 @@ function VendorDashboard() {
   );
 
   const setStatus = async (id: string, status: "on_the_way" | "delivered") => {
-    const patch: Record<string, string | null> = { delivery_status: status };
-    if (status === "delivered") {
-      const now = new Date();
-      patch.delivered_at = now.toISOString();
-      patch.escrow_release_at = new Date(now.getTime() + 4 * 3600 * 1000).toISOString();
-    }
+    const now = new Date();
+    const patch = status === "delivered"
+      ? { delivery_status: status, delivered_at: now.toISOString(), escrow_release_at: new Date(now.getTime() + 4 * 3600 * 1000).toISOString() }
+      : { delivery_status: status };
     const { error } = await supabase.from("orders").update(patch).eq("id", id);
     if (error) return toast.error(error.message);
     const o = orders.find((x) => x.id === id);
