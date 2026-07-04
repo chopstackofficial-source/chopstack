@@ -14,7 +14,7 @@ type Zone = { id: string; name: string };
 
 function Signup() {
   const nav = useNavigate();
-  const [f, setF] = useState({ name: "", email: "", phone: "", password: "", zone_id: "" });
+  const [f, setF] = useState({ name: "", email: "", phone: "", password: "", zone_id: "", delivery_address: "" });
   const [zones, setZones] = useState<Zone[]>([]);
   const [busy, setBusy] = useState(false);
 
@@ -35,7 +35,11 @@ function Signup() {
     });
     if (error) { setBusy(false); return toast.error(error.message); }
     if (data.user) {
-      await supabase.from("buyers").insert({ id: data.user.id, name: f.name, email: f.email, phone: f.phone || null, zone_id: f.zone_id || null });
+      await supabase.from("buyers").insert({
+        id: data.user.id, name: f.name, email: f.email,
+        phone: f.phone || null, zone_id: f.zone_id || null,
+        delivery_address: f.delivery_address,
+      });
       if (f.zone_id) writeZoneId(f.zone_id);
     }
     setBusy(false);
@@ -61,6 +65,12 @@ function Signup() {
             {zones.map((z) => <option key={z.id} value={z.id}>{z.name}</option>)}
           </select>
           <p className="text-xs text-muted-foreground mt-1">You'll only see stock available in your zone.</p>
+        </div>
+        <div>
+          <Label>Delivery address or nearest landmark</Label>
+          <textarea required rows={2} className="w-full rounded-md bg-input border border-border px-3 py-2 text-sm"
+            value={f.delivery_address} onChange={(e) => setF({ ...f, delivery_address: e.target.value })}
+            placeholder="Flat 4, 12 Allen Avenue, near Ikeja City Mall" />
         </div>
         <Button type="submit" size="lg" className="w-full" disabled={busy}>{busy ? "Creating…" : "Sign up"}</Button>
       </form>

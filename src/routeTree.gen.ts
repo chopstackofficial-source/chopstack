@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VendorRouteImport } from './routes/vendor'
 import { Route as SignupRouteImport } from './routes/signup'
-import { Route as SearchRouteImport } from './routes/search'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as CartRouteImport } from './routes/cart'
@@ -20,7 +19,7 @@ import { Route as AccountRouteImport } from './routes/account'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OrdersIndexRouteImport } from './routes/orders.index'
 import { Route as VendorSignupRouteImport } from './routes/vendor.signup'
-import { Route as VendorPendingRouteImport } from './routes/vendor.pending'
+import { Route as VendorIdRouteImport } from './routes/vendor.$id'
 import { Route as ProductIdRouteImport } from './routes/product.$id'
 import { Route as OrdersIdRouteImport } from './routes/orders.$id'
 
@@ -32,11 +31,6 @@ const VendorRoute = VendorRouteImport.update({
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SearchRoute = SearchRouteImport.update({
-  id: '/search',
-  path: '/search',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -79,9 +73,9 @@ const VendorSignupRoute = VendorSignupRouteImport.update({
   path: '/signup',
   getParentRoute: () => VendorRoute,
 } as any)
-const VendorPendingRoute = VendorPendingRouteImport.update({
-  id: '/pending',
-  path: '/pending',
+const VendorIdRoute = VendorIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
   getParentRoute: () => VendorRoute,
 } as any)
 const ProductIdRoute = ProductIdRouteImport.update({
@@ -102,12 +96,11 @@ export interface FileRoutesByFullPath {
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRoute
   '/login': typeof LoginRoute
-  '/search': typeof SearchRoute
   '/signup': typeof SignupRoute
   '/vendor': typeof VendorRouteWithChildren
   '/orders/$id': typeof OrdersIdRoute
   '/product/$id': typeof ProductIdRoute
-  '/vendor/pending': typeof VendorPendingRoute
+  '/vendor/$id': typeof VendorIdRoute
   '/vendor/signup': typeof VendorSignupRoute
   '/orders/': typeof OrdersIndexRoute
 }
@@ -118,12 +111,11 @@ export interface FileRoutesByTo {
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRoute
   '/login': typeof LoginRoute
-  '/search': typeof SearchRoute
   '/signup': typeof SignupRoute
   '/vendor': typeof VendorRouteWithChildren
   '/orders/$id': typeof OrdersIdRoute
   '/product/$id': typeof ProductIdRoute
-  '/vendor/pending': typeof VendorPendingRoute
+  '/vendor/$id': typeof VendorIdRoute
   '/vendor/signup': typeof VendorSignupRoute
   '/orders': typeof OrdersIndexRoute
 }
@@ -135,12 +127,11 @@ export interface FileRoutesById {
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRoute
   '/login': typeof LoginRoute
-  '/search': typeof SearchRoute
   '/signup': typeof SignupRoute
   '/vendor': typeof VendorRouteWithChildren
   '/orders/$id': typeof OrdersIdRoute
   '/product/$id': typeof ProductIdRoute
-  '/vendor/pending': typeof VendorPendingRoute
+  '/vendor/$id': typeof VendorIdRoute
   '/vendor/signup': typeof VendorSignupRoute
   '/orders/': typeof OrdersIndexRoute
 }
@@ -153,12 +144,11 @@ export interface FileRouteTypes {
     | '/cart'
     | '/checkout'
     | '/login'
-    | '/search'
     | '/signup'
     | '/vendor'
     | '/orders/$id'
     | '/product/$id'
-    | '/vendor/pending'
+    | '/vendor/$id'
     | '/vendor/signup'
     | '/orders/'
   fileRoutesByTo: FileRoutesByTo
@@ -169,12 +159,11 @@ export interface FileRouteTypes {
     | '/cart'
     | '/checkout'
     | '/login'
-    | '/search'
     | '/signup'
     | '/vendor'
     | '/orders/$id'
     | '/product/$id'
-    | '/vendor/pending'
+    | '/vendor/$id'
     | '/vendor/signup'
     | '/orders'
   id:
@@ -185,12 +174,11 @@ export interface FileRouteTypes {
     | '/cart'
     | '/checkout'
     | '/login'
-    | '/search'
     | '/signup'
     | '/vendor'
     | '/orders/$id'
     | '/product/$id'
-    | '/vendor/pending'
+    | '/vendor/$id'
     | '/vendor/signup'
     | '/orders/'
   fileRoutesById: FileRoutesById
@@ -202,7 +190,6 @@ export interface RootRouteChildren {
   CartRoute: typeof CartRoute
   CheckoutRoute: typeof CheckoutRoute
   LoginRoute: typeof LoginRoute
-  SearchRoute: typeof SearchRoute
   SignupRoute: typeof SignupRoute
   VendorRoute: typeof VendorRouteWithChildren
   OrdersIdRoute: typeof OrdersIdRoute
@@ -224,13 +211,6 @@ declare module '@tanstack/react-router' {
       path: '/signup'
       fullPath: '/signup'
       preLoaderRoute: typeof SignupRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/search': {
-      id: '/search'
-      path: '/search'
-      fullPath: '/search'
-      preLoaderRoute: typeof SearchRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -289,11 +269,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VendorSignupRouteImport
       parentRoute: typeof VendorRoute
     }
-    '/vendor/pending': {
-      id: '/vendor/pending'
-      path: '/pending'
-      fullPath: '/vendor/pending'
-      preLoaderRoute: typeof VendorPendingRouteImport
+    '/vendor/$id': {
+      id: '/vendor/$id'
+      path: '/$id'
+      fullPath: '/vendor/$id'
+      preLoaderRoute: typeof VendorIdRouteImport
       parentRoute: typeof VendorRoute
     }
     '/product/$id': {
@@ -314,12 +294,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface VendorRouteChildren {
-  VendorPendingRoute: typeof VendorPendingRoute
+  VendorIdRoute: typeof VendorIdRoute
   VendorSignupRoute: typeof VendorSignupRoute
 }
 
 const VendorRouteChildren: VendorRouteChildren = {
-  VendorPendingRoute: VendorPendingRoute,
+  VendorIdRoute: VendorIdRoute,
   VendorSignupRoute: VendorSignupRoute,
 }
 
@@ -333,7 +313,6 @@ const rootRouteChildren: RootRouteChildren = {
   CartRoute: CartRoute,
   CheckoutRoute: CheckoutRoute,
   LoginRoute: LoginRoute,
-  SearchRoute: SearchRoute,
   SignupRoute: SignupRoute,
   VendorRoute: VendorRouteWithChildren,
   OrdersIdRoute: OrdersIdRoute,

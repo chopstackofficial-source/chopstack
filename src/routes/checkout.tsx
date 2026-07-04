@@ -63,7 +63,9 @@ function Checkout() {
         const { data: order, error } = await supabase.from("orders").insert({
           buyer_id: user.id, vendor_id: vid, zone_id: zoneId,
           subtotal: sub, delivery_fee: df, total: sub + df,
-          payment_status: "paid", escrow_status: "held", paid_at: new Date().toISOString(),
+          payment_status: "paid", escrow_status: "held",
+          delivery_status: "confirmed",
+          paid_at: new Date().toISOString(),
         }).select("id,order_number").single();
         if (error) throw new Error(error.message);
         orderIds.push(order.id);
@@ -76,8 +78,8 @@ function Checkout() {
         }
         // Notifications
         await supabase.from("notifications").insert([
-          { user_id: user.id, user_type: "buyer", title: `Order #${order.order_number} confirmed`, body: "We're on it.", deeplink: `/orders/${order.id}` },
-          { user_id: vid, user_type: "vendor", title: `New order #${order.order_number}`, body: "Check your dashboard.", deeplink: `/vendor/orders/${order.id}` },
+          { user_id: user.id, user_type: "buyer", title: `Order ${order.order_number} confirmed`, body: "We're on it.", deeplink: `/orders/${order.id}` },
+          { user_id: vid, user_type: "vendor", title: `New order ${order.order_number} just dropped`, body: "Check your dashboard.", deeplink: `/vendor` },
         ]);
       }
       clearCart();
