@@ -2,6 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { MobileShell } from "@/components/app/BottomNav";
+import { Splash } from "@/components/app/Splash";
+import { ThemeToggle } from "@/components/app/ThemeToggle";
 import { readZoneId, writeZoneId } from "@/lib/zone";
 import { addToCart } from "@/lib/cart";
 import { aiSearchProducts } from "@/lib/ai-search.functions";
@@ -16,6 +18,10 @@ type Product = { id: string; name: string; photo_url: string | null; price: numb
 export const Route = createFileRoute("/")({ component: Home });
 
 function Home() {
+  const [showSplash, setShowSplash] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return !sessionStorage.getItem("cs_splash_seen");
+  });
   const [zones, setZones] = useState<Zone[]>([]);
   const [zoneId, setZoneId] = useState<string | null>(null);
   const [showPicker, setShowPicker] = useState(false);
@@ -81,14 +87,23 @@ function Home() {
 
   return (
     <MobileShell>
+      {showSplash && (
+        <Splash
+          onDone={() => {
+            sessionStorage.setItem("cs_splash_seen", "1");
+            setShowSplash(false);
+          }}
+        />
+      )}
       <header className="sticky top-0 z-40 bg-background/95 backdrop-blur border-b border-border">
         <div className="px-4 pt-3 pb-2 flex items-center gap-2">
           <img src={logo} alt="" className="w-8 h-8" />
-          <button onClick={() => setShowPicker((s) => !s)} className="flex-1 flex items-center gap-1 text-sm">
-            <MapPin className="w-4 h-4 text-primary" />
+          <button onClick={() => setShowPicker((s) => !s)} className="flex-1 flex items-center gap-1 text-sm min-w-0">
+            <MapPin className="w-4 h-4 text-primary shrink-0" />
             <span className="font-semibold truncate">{currentZone?.name ?? "Pick zone"}</span>
-            <ChevronDown className="w-4 h-4 text-muted-foreground" />
+            <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
           </button>
+          <ThemeToggle className="h-8 w-8" />
         </div>
         {showPicker && (
           <div className="px-4 pb-3">
@@ -102,20 +117,39 @@ function Home() {
             </div>
           </div>
         )}
-        <div className="px-4 pb-3 space-y-2">
-          <form onSubmit={(e) => { e.preventDefault(); askAi(); }} className="relative">
-            <Sparkles className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
-            <input value={aiInput} maxLength={100} onChange={(e) => setAiInput(e.target.value)} placeholder="What do you need? Ask anything…" className="w-full h-11 pl-10 pr-20 rounded-full bg-primary/10 border border-primary/30 text-sm outline-none focus:border-primary" />
-            <button type="submit" disabled={!aiInput.trim()} className="absolute right-1.5 top-1/2 -translate-y-1/2 h-8 px-3 rounded-full bg-primary text-primary-foreground text-xs font-semibold disabled:opacity-50">Ask</button>
-          </form>
+        <div className="px-4 pb-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Or search by name" className="w-full h-10 pl-10 pr-3 rounded-full bg-muted/60 border border-border text-sm outline-none focus:border-primary" />
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search products" className="w-full h-10 pl-10 pr-3 rounded-full bg-muted/60 border border-border text-sm outline-none focus:border-primary" />
           </div>
         </div>
       </header>
 
       <main className="px-3 py-3">
+        <section className="mb-4 rounded-3xl bg-gradient-to-br from-primary/20 via-primary/10 to-transparent border border-primary/30 p-4 shadow-[var(--glow-primary)]">
+          <div className="flex items-center gap-2 mb-2">
+            <Sparkles className="w-5 h-5 text-primary" />
+            <h2 className="text-lg font-black tracking-tight">What do you need today?</h2>
+          </div>
+          <p className="text-xs text-muted-foreground mb-3">Ask in your own words — we'll find it from stock in your zone.</p>
+          <form onSubmit={(e) => { e.preventDefault(); askAi(); }} className="relative">
+            <input
+              value={aiInput}
+              maxLength={100}
+              onChange={(e) => setAiInput(e.target.value)}
+              placeholder="e.g. ingredients for jollof rice"
+              className="w-full h-14 pl-4 pr-24 rounded-2xl bg-background border-2 border-primary/40 text-sm font-medium outline-none focus:border-primary shadow-sm"
+            />
+            <button
+              type="submit"
+              disabled={!aiInput.trim() || ai?.loading}
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 h-11 px-5 rounded-xl bg-primary text-primary-foreground text-sm font-bold disabled:opacity-50 flex items-center gap-1.5"
+            >
+              {ai?.loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+              Ask
+            </button>
+          </form>
+        </section>
         {ai && (
           <div className="mb-4 p-3 bg-primary/5 border border-primary/20 rounded-2xl">
             <div className="flex items-start gap-2 mb-2">
