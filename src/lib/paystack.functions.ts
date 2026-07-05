@@ -202,7 +202,6 @@ export const verifyPaystackPayment = createServerFn({ method: "POST" })
     if (paid) {
       // Idempotent flip — webhook may have beat us to it.
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      await supabaseAdmin.rpc; // no-op reference to keep bundler happy
       await supabaseAdmin
         .from("orders")
         .update({
