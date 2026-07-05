@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Home, Search, ShoppingCart, Package, User } from "lucide-react";
+import { Home, ShoppingCart, Package, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { cartCount, subscribeCart } from "@/lib/cart";
@@ -15,7 +15,6 @@ export function BottomNav() {
 
   const items = [
     { to: "/", label: "Home", icon: Home, match: (p: string) => p === "/" },
-    { to: "/search", label: "Search", icon: Search, match: (p: string) => p.startsWith("/search") },
     { to: "/cart", label: "Cart", icon: ShoppingCart, badge: count, match: (p: string) => p.startsWith("/cart") },
     { to: "/orders", label: "Orders", icon: Package, match: (p: string) => p.startsWith("/orders") },
     { to: "/account", label: "Account", icon: User, match: (p: string) => p.startsWith("/account") || p.startsWith("/login") || p.startsWith("/signup") },
@@ -23,7 +22,7 @@ export function BottomNav() {
 
   return (
     <nav className="fixed bottom-0 inset-x-0 z-50 bg-card border-t border-border">
-      <div className="mx-auto max-w-md grid grid-cols-5">
+      <div className="mx-auto max-w-md grid grid-cols-4">
         {items.map((it) => {
           const active = it.match(loc.pathname);
           const Icon = it.icon;
