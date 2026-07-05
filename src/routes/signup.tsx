@@ -29,22 +29,41 @@ function Signup() {
     e.preventDefault();
     if (f.password.length < 6) return toast.error("Password too short");
     setBusy(true);
-    const { data, error } = await supabase.auth.signUp({
-      email: f.email, password: f.password,
-      options: { emailRedirectTo: `${window.location.origin}/`, data: { name: f.name } },
-    });
-    if (error) { setBusy(false); return toast.error(error.message); }
-    if (data.user) {
-      await supabase.from("buyers").insert({
-        id: data.user.id, name: f.name, email: f.email,
-        phone: f.phone || null, zone_id: f.zone_id || null,
+    try {
+      const { data: cur } = await supabase.auth.getUser();
+      if (cur.user) await supabase.auth.signOut();
+
+      const { data, error } = await supabase.auth.signUp({
+        email: f.email,
+        password: f.password,
+        options: { emailRedirectTo: `${window.location.origin}/`, data: { name: f.name } },
+      });
+      if (error) throw new Error(error.message);
+      if (!data.user) throw new Error("Sign up failed. Try again.");
+
+      if (!data.session) {
+        toast.success("Account created. Check your email to confirm, then log in.");
+        nav({ to: "/login" });
+        return;
+      }
+
+      const { error: bErr } = await supabase.from("buyers").insert({
+        id: data.user.id,
+        name: f.name,
+        email: f.email,
+        phone: f.phone || null,
+        zone_id: f.zone_id || null,
         delivery_address: f.delivery_address,
       });
+      if (bErr) throw new Error(bErr.message);
       if (f.zone_id) writeZoneId(f.zone_id);
+      toast.success("Welcome!");
+      nav({ to: "/" });
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setBusy(false);
     }
-    setBusy(false);
-    if (data.session) { toast.success("Welcome!"); nav({ to: "/" }); }
-    else { toast.success("Check your email to verify"); nav({ to: "/login" }); }
   };
 
   return (
