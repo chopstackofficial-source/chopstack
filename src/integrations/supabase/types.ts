@@ -290,6 +290,33 @@ export type Database = {
           },
         ]
       }
+      paystack_events: {
+        Row: {
+          event_id: string
+          event_type: string
+          id: string
+          payload: Json
+          processed_at: string
+          reference: string | null
+        }
+        Insert: {
+          event_id: string
+          event_type: string
+          id?: string
+          payload: Json
+          processed_at?: string
+          reference?: string | null
+        }
+        Update: {
+          event_id?: string
+          event_type?: string
+          id?: string
+          payload?: Json
+          processed_at?: string
+          reference?: string | null
+        }
+        Relationships: []
+      }
       product_zones: {
         Row: {
           id: string

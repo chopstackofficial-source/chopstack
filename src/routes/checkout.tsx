@@ -2,12 +2,13 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { MobileShell } from "@/components/app/BottomNav";
-import { readCart, clearCart } from "@/lib/cart";
+import { readCart } from "@/lib/cart";
 import { readZoneId } from "@/lib/zone";
 import { useAuth } from "@/lib/auth";
 import { formatPrice } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { initPaystackCheckout } from "@/lib/paystack.functions";
 
 type Row = { id: string; name: string; price: number; vendor_id: string; quantity: number };
 
@@ -51,43 +52,22 @@ function Checkout() {
   const placeOrder = async () => {
     if (!user) return;
     if (!zoneId) return toast.error("Pick a delivery zone first");
+    if (items.length === 0) return toast.error("Cart is empty");
     setBusy(true);
-    const vendorIds = Object.keys(grouped);
-    const orderIds: string[] = [];
     try {
-      for (const vid of vendorIds) {
-        const groupItems = grouped[vid];
-        const sub = groupItems.reduce((s, r) => s + Number(r.price) * r.qty, 0);
-        // Split delivery fee per vendor equally
-        const df = Math.round((deliveryFee / vendorIds.length) * 100) / 100;
-        const { data: order, error } = await supabase.from("orders").insert({
-          buyer_id: user.id, vendor_id: vid, zone_id: zoneId,
-          subtotal: sub, delivery_fee: df, total: sub + df,
-          payment_status: "paid", escrow_status: "held",
-          delivery_status: "confirmed",
-          paid_at: new Date().toISOString(),
-        }).select("id,order_number").single();
-        if (error) throw new Error(error.message);
-        orderIds.push(order.id);
-        const rowsToInsert = groupItems.map((r) => ({ order_id: order.id, product_id: r.id, name_snapshot: r.name, unit_price: Number(r.price), quantity: r.qty }));
-        const { error: oiErr } = await supabase.from("order_items").insert(rowsToInsert);
-        if (oiErr) throw new Error(oiErr.message);
-        // Decrement product stock
-        for (const r of groupItems) {
-          await supabase.from("products").update({ quantity: r.quantity - r.qty }).eq("id", r.id);
-        }
-        // Notifications
-        await supabase.from("notifications").insert([
-          { user_id: user.id, user_type: "buyer", title: `Order ${order.order_number} confirmed`, body: "We're on it.", deeplink: `/orders/${order.id}` },
-          { user_id: vid, user_type: "vendor", title: `New order ${order.order_number} just dropped`, body: "Check your dashboard.", deeplink: `/vendor` },
-        ]);
-      }
-      clearCart();
-      toast.success("Payment received. Order confirmed.");
-      nav({ to: "/orders/$id", params: { id: orderIds[0] } });
+      const callbackUrl = `${window.location.origin}/checkout/callback`;
+      const res = await initPaystackCheckout({
+        data: {
+          zoneId,
+          callbackUrl,
+          items: items.map((r) => ({ productId: r.id, qty: r.qty })),
+        },
+      });
+      window.location.href = res.authorization_url;
     } catch (e) {
       toast.error((e as Error).message);
-    } finally { setBusy(false); }
+      setBusy(false);
+    }
   };
 
   if (authLoading) return <MobileShell><div className="p-6 text-sm text-muted-foreground">Loading…</div></MobileShell>;

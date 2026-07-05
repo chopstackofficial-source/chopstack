@@ -2,7 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { MobileShell } from "@/components/app/BottomNav";
-import { Splash } from "@/components/app/Splash";
 import { ThemeToggle } from "@/components/app/ThemeToggle";
 import { readZoneId, writeZoneId } from "@/lib/zone";
 import { addToCart } from "@/lib/cart";
@@ -18,10 +17,6 @@ type Product = { id: string; name: string; photo_url: string | null; price: numb
 export const Route = createFileRoute("/")({ component: Home });
 
 function Home() {
-  const [showSplash, setShowSplash] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return !sessionStorage.getItem("cs_splash_seen");
-  });
   const [zones, setZones] = useState<Zone[]>([]);
   const [zoneId, setZoneId] = useState<string | null>(null);
   const [showPicker, setShowPicker] = useState(false);
@@ -87,14 +82,6 @@ function Home() {
 
   return (
     <MobileShell>
-      {showSplash && (
-        <Splash
-          onDone={() => {
-            sessionStorage.setItem("cs_splash_seen", "1");
-            setShowSplash(false);
-          }}
-        />
-      )}
       <header className="sticky top-0 z-40 bg-background/95 backdrop-blur border-b border-border">
         <div className="px-4 pt-3 pb-2 flex items-center gap-2">
           <img src={logo} alt="" className="w-8 h-8" />
