@@ -19,23 +19,46 @@ function VendorSignup() {
     if (f.password.length < 6) return toast.error("Password too short");
     if (!/^\d{10}$/.test(f.account_number)) return toast.error("Enter a valid 10-digit account number");
     setBusy(true);
-    const { data, error } = await supabase.auth.signUp({
-      email: f.email, password: f.password,
-      options: { emailRedirectTo: `${window.location.origin}/vendor`, data: { name: f.name } },
-    });
-    if (error) { setBusy(false); return toast.error(error.message); }
-    if (data.user) {
+    try {
+      // If someone is already signed in, sign them out first — vendor accounts
+      // must own their own auth user.
+      const { data: cur } = await supabase.auth.getUser();
+      if (cur.user) await supabase.auth.signOut();
+
+      const { data, error } = await supabase.auth.signUp({
+        email: f.email,
+        password: f.password,
+        options: { emailRedirectTo: `${window.location.origin}/vendor`, data: { name: f.name } },
+      });
+      if (error) throw new Error(error.message);
+      if (!data.user) throw new Error("Sign up failed. Try again.");
+
+      // If email confirmation is required, no session yet — instruct user.
+      if (!data.session) {
+        toast.success("Account created. Check your email to confirm, then log in.");
+        nav({ to: "/login" });
+        return;
+      }
+
       const { error: vErr } = await supabase.from("vendors").insert({
-        id: data.user.id, name: f.name, email: f.email, phone: f.phone,
-        bank_name: f.bank_name, account_number: f.account_number, account_name: f.account_name,
+        id: data.user.id,
+        name: f.name,
+        email: f.email,
+        phone: f.phone,
+        bank_name: f.bank_name,
+        account_number: f.account_number,
+        account_name: f.account_name,
         status: "active",
       });
-      if (vErr) { setBusy(false); return toast.error(vErr.message); }
-      await supabase.from("user_roles").insert({ user_id: data.user.id, role: "vendor" });
+      if (vErr) throw new Error(vErr.message);
+
+      toast.success("You're live!");
+      nav({ to: "/vendor" });
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setBusy(false);
     }
-    setBusy(false);
-    if (data.session) { toast.success("You're live!"); nav({ to: "/vendor" }); }
-    else { toast.success("Check your email to confirm, then log in."); nav({ to: "/login" }); }
   };
 
   return (
