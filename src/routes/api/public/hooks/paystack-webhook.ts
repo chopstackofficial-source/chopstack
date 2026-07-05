@@ -45,7 +45,7 @@ export const Route = createFileRoute("/api/public/hooks/paystack-webhook")({
             event_id: eventId,
             event_type: evt.event,
             reference: evt.data?.reference ?? null,
-            payload: evt as unknown as Record<string, unknown>,
+            payload: evt as unknown as never,
           });
         if (logErr && logErr.code === "23505") {
           return new Response("ok", { status: 200 });
@@ -77,6 +77,7 @@ export const Route = createFileRoute("/api/public/hooks/paystack-webhook")({
               .in("order_id", orderIds);
             if (items) {
               for (const it of items) {
+                if (!it.product_id) continue;
                 const { data: p } = await supabaseAdmin
                   .from("products")
                   .select("quantity")

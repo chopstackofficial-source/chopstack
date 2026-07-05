@@ -22,6 +22,7 @@ import { Route as VendorSignupRouteImport } from './routes/vendor.signup'
 import { Route as VendorIdRouteImport } from './routes/vendor.$id'
 import { Route as ProductIdRouteImport } from './routes/product.$id'
 import { Route as OrdersIdRouteImport } from './routes/orders.$id'
+import { Route as ApiPublicHooksPaystackWebhookRouteImport } from './routes/api/public/hooks/paystack-webhook'
 
 const VendorRoute = VendorRouteImport.update({
   id: '/vendor',
@@ -88,6 +89,12 @@ const OrdersIdRoute = OrdersIdRouteImport.update({
   path: '/orders/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksPaystackWebhookRoute =
+  ApiPublicHooksPaystackWebhookRouteImport.update({
+    id: '/api/public/hooks/paystack-webhook',
+    path: '/api/public/hooks/paystack-webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -103,6 +110,7 @@ export interface FileRoutesByFullPath {
   '/vendor/$id': typeof VendorIdRoute
   '/vendor/signup': typeof VendorSignupRoute
   '/orders/': typeof OrdersIndexRoute
+  '/api/public/hooks/paystack-webhook': typeof ApiPublicHooksPaystackWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -118,6 +126,7 @@ export interface FileRoutesByTo {
   '/vendor/$id': typeof VendorIdRoute
   '/vendor/signup': typeof VendorSignupRoute
   '/orders': typeof OrdersIndexRoute
+  '/api/public/hooks/paystack-webhook': typeof ApiPublicHooksPaystackWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -134,6 +143,7 @@ export interface FileRoutesById {
   '/vendor/$id': typeof VendorIdRoute
   '/vendor/signup': typeof VendorSignupRoute
   '/orders/': typeof OrdersIndexRoute
+  '/api/public/hooks/paystack-webhook': typeof ApiPublicHooksPaystackWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -151,6 +161,7 @@ export interface FileRouteTypes {
     | '/vendor/$id'
     | '/vendor/signup'
     | '/orders/'
+    | '/api/public/hooks/paystack-webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -166,6 +177,7 @@ export interface FileRouteTypes {
     | '/vendor/$id'
     | '/vendor/signup'
     | '/orders'
+    | '/api/public/hooks/paystack-webhook'
   id:
     | '__root__'
     | '/'
@@ -181,6 +193,7 @@ export interface FileRouteTypes {
     | '/vendor/$id'
     | '/vendor/signup'
     | '/orders/'
+    | '/api/public/hooks/paystack-webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -195,6 +208,7 @@ export interface RootRouteChildren {
   OrdersIdRoute: typeof OrdersIdRoute
   ProductIdRoute: typeof ProductIdRoute
   OrdersIndexRoute: typeof OrdersIndexRoute
+  ApiPublicHooksPaystackWebhookRoute: typeof ApiPublicHooksPaystackWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -290,6 +304,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrdersIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/paystack-webhook': {
+      id: '/api/public/hooks/paystack-webhook'
+      path: '/api/public/hooks/paystack-webhook'
+      fullPath: '/api/public/hooks/paystack-webhook'
+      preLoaderRoute: typeof ApiPublicHooksPaystackWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -318,6 +339,7 @@ const rootRouteChildren: RootRouteChildren = {
   OrdersIdRoute: OrdersIdRoute,
   ProductIdRoute: ProductIdRoute,
   OrdersIndexRoute: OrdersIndexRoute,
+  ApiPublicHooksPaystackWebhookRoute: ApiPublicHooksPaystackWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
