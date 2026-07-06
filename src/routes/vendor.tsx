@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -23,6 +23,7 @@ type Order = {
 
 function VendorDashboard() {
   const nav = useNavigate();
+  const location = useLocation();
   const { user, vendor, loading } = useAuth();
   const [tab, setTab] = useState<"orders" | "products">("orders");
   const [zones, setZones] = useState<Zone[]>([]);
@@ -48,7 +49,11 @@ function VendorDashboard() {
     setOrders(withItems);
   }, [user]);
 
-  useEffect(() => { if (user) loadAll(); }, [user, loadAll]);
+  useEffect(() => {
+    if (user && location.pathname === "/vendor") loadAll();
+  }, [user, location.pathname, loadAll]);
+
+  if (location.pathname !== "/vendor") return <Outlet />;
 
   if (loading) return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
   if (!user) return (
