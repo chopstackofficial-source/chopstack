@@ -20,6 +20,8 @@ export type Database = {
           delivery_address: string | null
           email: string
           id: string
+          latitude: number | null
+          longitude: number | null
           name: string
           phone: string | null
           updated_at: string
@@ -30,6 +32,8 @@ export type Database = {
           delivery_address?: string | null
           email: string
           id: string
+          latitude?: number | null
+          longitude?: number | null
           name: string
           phone?: string | null
           updated_at?: string
@@ -40,6 +44,8 @@ export type Database = {
           delivery_address?: string | null
           email?: string
           id?: string
+          latitude?: number | null
+          longitude?: number | null
           name?: string
           phone?: string | null
           updated_at?: string
@@ -89,6 +95,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      delivery_tiers: {
+        Row: {
+          created_at: string
+          delivery_fee: number
+          id: string
+          max_km: number
+          min_km: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          delivery_fee: number
+          id?: string
+          max_km: number
+          min_km: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          delivery_fee?: number
+          id?: string
+          max_km?: number
+          min_km?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       disputes: {
         Row: {
@@ -221,7 +257,10 @@ export type Database = {
           created_at: string
           delivered_at: string | null
           delivery_fee: number
+          delivery_lat: number | null
+          delivery_lng: number | null
           delivery_status: string
+          distance_km: number | null
           escrow_release_at: string | null
           escrow_status: string
           id: string
@@ -233,14 +272,17 @@ export type Database = {
           total: number
           updated_at: string
           vendor_id: string
-          zone_id: string
+          zone_id: string | null
         }
         Insert: {
           buyer_id: string
           created_at?: string
           delivered_at?: string | null
           delivery_fee?: number
+          delivery_lat?: number | null
+          delivery_lng?: number | null
           delivery_status?: string
+          distance_km?: number | null
           escrow_release_at?: string | null
           escrow_status?: string
           id?: string
@@ -252,14 +294,17 @@ export type Database = {
           total: number
           updated_at?: string
           vendor_id: string
-          zone_id: string
+          zone_id?: string | null
         }
         Update: {
           buyer_id?: string
           created_at?: string
           delivered_at?: string | null
           delivery_fee?: number
+          delivery_lat?: number | null
+          delivery_lng?: number | null
           delivery_status?: string
+          distance_km?: number | null
           escrow_release_at?: string | null
           escrow_status?: string
           id?: string
@@ -271,7 +316,7 @@ export type Database = {
           total?: number
           updated_at?: string
           vendor_id?: string
-          zone_id?: string
+          zone_id?: string | null
         }
         Relationships: [
           {
@@ -491,10 +536,13 @@ export type Database = {
         Row: {
           account_name: string | null
           account_number: string | null
+          address: string | null
           bank_name: string | null
           created_at: string
           email: string
           id: string
+          latitude: number | null
+          longitude: number | null
           name: string
           paystack_recipient_code: string | null
           paystack_subaccount_code: string | null
@@ -507,10 +555,13 @@ export type Database = {
         Insert: {
           account_name?: string | null
           account_number?: string | null
+          address?: string | null
           bank_name?: string | null
           created_at?: string
           email: string
           id: string
+          latitude?: number | null
+          longitude?: number | null
           name: string
           paystack_recipient_code?: string | null
           paystack_subaccount_code?: string | null
@@ -523,10 +574,13 @@ export type Database = {
         Update: {
           account_name?: string | null
           account_number?: string | null
+          address?: string | null
           bank_name?: string | null
           created_at?: string
           email?: string
           id?: string
+          latitude?: number | null
+          longitude?: number | null
           name?: string
           paystack_recipient_code?: string | null
           paystack_subaccount_code?: string | null
