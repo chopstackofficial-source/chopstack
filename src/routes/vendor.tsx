@@ -49,7 +49,9 @@ function VendorDashboard() {
     setOrders(withItems);
   }, [user]);
 
-  useEffect(() => { if (user) loadAll(); }, [user, loadAll]);
+  useEffect(() => {
+    if (user && location.pathname === "/vendor") loadAll();
+  }, [user, location.pathname, loadAll]);
 
   if (location.pathname !== "/vendor") return <Outlet />;
 
