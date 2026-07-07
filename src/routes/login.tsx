@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { writeZoneId } from "@/lib/zone";
+import { writeLocation } from "@/lib/location";
 import logo from "@/assets/logo.png";
 
 export const Route = createFileRoute("/login")({ component: Login });
@@ -22,10 +22,12 @@ function Login() {
     setBusy(false);
     if (error) return toast.error(error.message);
     toast.success("Welcome back");
-    // Restore zone from buyer profile if any
+    // Restore saved delivery location from buyer profile if any
     if (data.user) {
-      const { data: b } = await supabase.from("buyers").select("zone_id").eq("id", data.user.id).maybeSingle();
-      if (b?.zone_id) writeZoneId(b.zone_id);
+      const { data: b } = await supabase.from("buyers").select("latitude,longitude,delivery_address").eq("id", data.user.id).maybeSingle();
+      if (b?.latitude != null && b?.longitude != null) {
+        writeLocation({ lat: b.latitude, lng: b.longitude, address: b.delivery_address ?? "" });
+      }
     }
     nav({ to: "/" });
   };

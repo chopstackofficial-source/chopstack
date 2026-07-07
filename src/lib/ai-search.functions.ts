@@ -2,9 +2,11 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { haversineKm, maxRadiusKm, type Tier } from "@/lib/distance";
 
 const Input = z.object({
-  zoneId: z.string().uuid(),
+  lat: z.number().min(-90).max(90),
+  lng: z.number().min(-180).max(180),
   query: z.string().min(1).max(100),
 });
 
@@ -20,22 +22,28 @@ export const aiSearchProducts = createServerFn({ method: "POST" })
       auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
     });
 
-    // Get in-stock products in the buyer's zone
-    const { data: pz } = await supabase.from("product_zones").select("product_id").eq("zone_id", data.zoneId);
-    const ids = (pz ?? []).map((r) => r.product_id);
-    if (ids.length === 0) return { matches: [], message: "Nothing in stock in this zone yet." };
+    // Load tiers to know max delivery radius
+    const { data: tiersRaw } = await supabase.from("delivery_tiers").select("id,min_km,max_km,delivery_fee");
+    const maxKm = maxRadiusKm(((tiersRaw ?? []) as unknown as Tier[]));
+    if (maxKm === 0) return { matches: [], message: "Delivery not configured." };
 
     const { data: products } = await supabase
       .from("products")
-      .select("id,name,price,quantity,vendor:vendors(name,status)")
-      .in("id", ids)
+      .select("id,name,price,quantity,vendor:vendors(name,status,latitude,longitude)")
       .eq("is_sold_out", false)
       .gt("quantity", 0);
 
-    const stock = (products ?? []).filter((p) => (p.vendor as { status: string } | null)?.status === "active");
+    type PRow = { id: string; name: string; price: number; quantity: number; vendor: { name: string; status: string; latitude: number | null; longitude: number | null } | null };
+    const stock = ((products ?? []) as unknown as PRow[]).filter((p) => {
+      const v = p.vendor;
+      if (!v || v.status !== "active") return false;
+      if (v.latitude == null || v.longitude == null) return false;
+      const km = haversineKm({ lat: data.lat, lng: data.lng }, { lat: v.latitude, lng: v.longitude });
+      return km <= maxKm;
+    });
     if (stock.length === 0) return { matches: [], message: "Nothing in stock right now." };
 
-    const catalog = stock.map((p) => ({ id: p.id, name: p.name, price: Number(p.price), vendor: (p.vendor as { name: string } | null)?.name }));
+    const catalog = stock.map((p) => ({ id: p.id, name: p.name, price: Number(p.price), vendor: p.vendor?.name }));
 
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("Missing LOVABLE_API_KEY");

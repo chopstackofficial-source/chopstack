@@ -1,59 +1,85 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { MobileShell } from "@/components/app/BottomNav";
 import { ThemeToggle } from "@/components/app/ThemeToggle";
-import { readZoneId, writeZoneId } from "@/lib/zone";
+import { readLocation, writeLocation, type SavedLocation } from "@/lib/location";
 import { addToCart } from "@/lib/cart";
 import { aiSearchProducts } from "@/lib/ai-search.functions";
 import { formatPrice } from "@/lib/format";
-import { Search, MapPin, ChevronDown, Plus, Check, Sparkles, Loader2 } from "lucide-react";
+import { haversineKm, maxRadiusKm, findTier, type Tier } from "@/lib/distance";
+import { LocationPicker } from "@/components/app/LocationPicker";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useAuth } from "@/lib/auth";
+import { MapPin, ChevronDown, Plus, Check, Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 
-type Zone = { id: string; name: string; delivery_fee: number };
-type Product = { id: string; name: string; photo_url: string | null; price: number; quantity: number; vendor: { name: string } | null };
+type Product = {
+  id: string;
+  name: string;
+  photo_url: string | null;
+  price: number;
+  quantity: number;
+  vendor: { name: string; latitude: number | null; longitude: number | null } | null;
+};
 
 export const Route = createFileRoute("/")({ component: Home });
 
 function Home() {
-  const [zones, setZones] = useState<Zone[]>([]);
-  const [zoneId, setZoneId] = useState<string | null>(null);
-  const [showPicker, setShowPicker] = useState(false);
+  const { user, buyer, refresh } = useAuth();
+  const [location, setLocation] = useState<SavedLocation | null>(null);
+  const [tiers, setTiers] = useState<Tier[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [q, setQ] = useState("");
+  const [showPicker, setShowPicker] = useState(false);
   const [loading, setLoading] = useState(true);
   const [added, setAdded] = useState<Record<string, boolean>>({});
   const [ai, setAi] = useState<{ query: string; loading: boolean; message: string; matches: { productId: string; reason: string }[] } | null>(null);
   const [aiInput, setAiInput] = useState("");
 
   useEffect(() => {
-    supabase.from("zones").select("id,name,delivery_fee").eq("active", true).order("name").then(({ data }) => {
-      const zs = (data ?? []) as Zone[];
-      setZones(zs);
-      const saved = readZoneId();
-      if (saved && zs.find((z) => z.id === saved)) setZoneId(saved);
-      else if (zs[0]) { setZoneId(zs[0].id); writeZoneId(zs[0].id); }
-      else setLoading(false);
+    supabase.from("delivery_tiers").select("id,min_km,max_km,delivery_fee").order("sort_order").then(({ data }) => {
+      setTiers(((data ?? []) as unknown as Tier[]).map((t) => ({ ...t, min_km: Number(t.min_km), max_km: Number(t.max_km), delivery_fee: Number(t.delivery_fee) })));
     });
   }, []);
 
   useEffect(() => {
-    if (!zoneId) return;
+    const saved = readLocation();
+    if (saved) { setLocation(saved); return; }
+    if (buyer?.latitude != null && buyer?.longitude != null) {
+      const l = { lat: buyer.latitude, lng: buyer.longitude, address: buyer.delivery_address ?? "" };
+      writeLocation(l);
+      setLocation(l);
+      return;
+    }
+    if (buyer && user) setShowPicker(true);
+  }, [buyer, user]);
+
+  const maxKm = useMemo(() => maxRadiusKm(tiers), [tiers]);
+
+  useEffect(() => {
+    if (!location) { setLoading(false); return; }
     setLoading(true);
     (async () => {
-      const { data: pz } = await supabase.from("product_zones").select("product_id").eq("zone_id", zoneId);
-      const ids = (pz ?? []).map((r) => r.product_id);
-      if (ids.length === 0) { setProducts([]); setLoading(false); return; }
-      let query = supabase.from("products").select("id,name,photo_url,price,quantity,vendor:vendors(name)").in("id", ids).eq("is_sold_out", false).gt("quantity", 0).order("created_at", { ascending: false });
-      if (q.trim()) query = query.ilike("name", `%${q.trim()}%`);
-      const { data } = await query;
-      setProducts((data ?? []) as unknown as Product[]);
+      const { data } = await supabase
+        .from("products")
+        .select("id,name,photo_url,price,quantity,vendor:vendors(name,latitude,longitude,status)")
+        .eq("is_sold_out", false)
+        .gt("quantity", 0)
+        .order("created_at", { ascending: false });
+      type Row = Product & { vendor: (Product["vendor"] & { status: string }) | null };
+      const rows = ((data ?? []) as unknown as Row[]).filter((p) => {
+        const v = p.vendor;
+        if (!v || v.status !== "active") return false;
+        if (v.latitude == null || v.longitude == null) return false;
+        if (maxKm === 0) return false;
+        const km = haversineKm({ lat: location.lat, lng: location.lng }, { lat: v.latitude, lng: v.longitude });
+        return km <= maxKm;
+      });
+      setProducts(rows);
       setLoading(false);
     })();
-  }, [zoneId, q]);
-
-  const currentZone = zones.find((z) => z.id === zoneId);
+  }, [location, maxKm]);
 
   const handleAdd = (p: Product) => {
     addToCart(p.id, 1);
@@ -62,15 +88,26 @@ function Home() {
     setTimeout(() => setAdded((s) => ({ ...s, [p.id]: false })), 1200);
   };
 
+  const saveLocation = async (loc: SavedLocation) => {
+    writeLocation(loc);
+    setLocation(loc);
+    setShowPicker(false);
+    if (user) {
+      await supabase.from("buyers").update({ latitude: loc.lat, longitude: loc.lng, delivery_address: loc.address }).eq("id", user.id);
+      refresh();
+    }
+    toast.success("Delivery location updated");
+  };
+
   const RATE_KEY = "cs_ai_search_count_v1";
   const askAi = async () => {
     const q = aiInput.trim();
-    if (!q || !zoneId) return;
+    if (!q || !location) return;
     const used = Number(localStorage.getItem(RATE_KEY) ?? "0");
     if (used >= 10) { toast.error("You've hit the search limit for this session."); return; }
     setAi({ query: q, loading: true, message: "", matches: [] });
     try {
-      const res = await aiSearchProducts({ data: { zoneId, query: q.slice(0, 100) } });
+      const res = await aiSearchProducts({ data: { lat: location.lat, lng: location.lng, query: q.slice(0, 100) } });
       localStorage.setItem(RATE_KEY, String(used + 1));
       setAi({ query: q, loading: false, message: res.message, matches: res.matches });
     } catch (e) {
@@ -85,32 +122,23 @@ function Home() {
       <header className="sticky top-0 z-40 bg-background/95 backdrop-blur border-b border-border">
         <div className="px-4 pt-3 pb-2 flex items-center gap-2">
           <img src={logo} alt="" className="w-8 h-8" />
-          <button onClick={() => setShowPicker((s) => !s)} className="flex-1 flex items-center gap-1 text-sm min-w-0">
+          <button onClick={() => setShowPicker(true)} className="flex-1 flex items-center gap-1 text-sm min-w-0 text-left">
             <MapPin className="w-4 h-4 text-primary shrink-0" />
-            <span className="font-semibold truncate">{currentZone?.name ?? "Pick zone"}</span>
+            <span className="font-semibold truncate">{location?.address || "Set delivery location"}</span>
             <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
           </button>
           <ThemeToggle className="h-8 w-8" />
         </div>
-        {showPicker && (
-          <div className="px-4 pb-3">
-            <div className="bg-card rounded-xl border border-border divide-y divide-border overflow-hidden">
-              {zones.map((z) => (
-                <button key={z.id} onClick={() => { setZoneId(z.id); writeZoneId(z.id); setShowPicker(false); }} className="w-full flex items-center justify-between px-3 py-2.5 text-sm hover:bg-accent">
-                  <span>{z.name}</span>
-                  <span className="text-xs text-muted-foreground">{formatPrice(z.delivery_fee)} delivery</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-        <div className="px-4 pb-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search products" className="w-full h-10 pl-10 pr-3 rounded-full bg-muted/60 border border-border text-sm outline-none focus:border-primary" />
-          </div>
-        </div>
       </header>
+
+      <Dialog open={showPicker} onOpenChange={setShowPicker}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delivery location</DialogTitle>
+          </DialogHeader>
+          <LocationPicker initial={location ? { lat: location.lat, lng: location.lng } : null} onConfirm={saveLocation} />
+        </DialogContent>
+      </Dialog>
 
       <main className="px-3 py-3">
         <section className="mb-4 rounded-3xl bg-gradient-to-br from-primary/20 via-primary/10 to-transparent border border-primary/30 p-4 shadow-[var(--glow-primary)]">
@@ -129,7 +157,7 @@ function Home() {
             />
             <button
               type="submit"
-              disabled={!aiInput.trim() || ai?.loading}
+              disabled={!aiInput.trim() || ai?.loading || !location}
               className="absolute right-1.5 top-1/2 -translate-y-1/2 h-11 px-5 rounded-xl bg-primary text-primary-foreground text-sm font-bold disabled:opacity-50 flex items-center gap-1.5"
             >
               {ai?.loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
@@ -178,9 +206,14 @@ function Home() {
         )}
         {loading ? (
           <div className="grid grid-cols-2 gap-3">{Array.from({ length: 6 }).map((_, i) => <div key={i} className="aspect-square bg-muted rounded-2xl animate-pulse" />)}</div>
+        ) : !location ? (
+          <div className="text-center py-16 text-muted-foreground text-sm space-y-3">
+            <p>Set your delivery location to see what's near you.</p>
+            <button onClick={() => setShowPicker(true)} className="text-primary font-medium">Set location</button>
+          </div>
         ) : products.length === 0 ? (
           <div className="text-center py-16 text-muted-foreground text-sm">
-            {q ? "Nothing matched your search." : "No stock in this zone yet. Check back soon."}
+            No vendors within {maxKm}km yet. Check back soon.
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-3">

@@ -10,28 +10,28 @@ import { Trash2 } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({ component: Admin });
 
-type Zone = { id: string; name: string; delivery_fee: number; active: boolean };
+type Tier = { id: string; min_km: number; max_km: number; delivery_fee: number; sort_order: number };
 type Vendor = { id: string; name: string; email: string; phone: string; status: string; bank_name: string | null; account_number: string | null; account_name: string | null };
 type Order = { id: string; order_number: string; total: number; delivery_status: string; escrow_status: string; created_at: string; vendor: { name: string } | null; buyer: { name: string } | null };
 type Dispute = { id: string; reason: string; status: string; created_at: string; order: { id: string; order_number: string; total: number } | null; buyer: { name: string; phone: string | null } | null };
 
 function Admin() {
   const { user, role, loading } = useAuth();
-  const [tab, setTab] = useState<"zones" | "vendors" | "orders" | "disputes">("zones");
-  const [zones, setZones] = useState<Zone[]>([]);
+  const [tab, setTab] = useState<"delivery" | "vendors" | "orders" | "disputes">("delivery");
+  const [tiers, setTiers] = useState<Tier[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [disputes, setDisputes] = useState<Dispute[]>([]);
-  const [newZone, setNewZone] = useState({ name: "", fee: "" });
+  const [newTier, setNewTier] = useState({ min_km: "", max_km: "", fee: "" });
 
   const load = useCallback(async () => {
-    const [z, v, o, d] = await Promise.all([
-      supabase.from("zones").select("*").order("name"),
+    const [t, v, o, d] = await Promise.all([
+      supabase.from("delivery_tiers").select("*").order("sort_order"),
       supabase.from("vendors").select("id,name,email,phone,status,bank_name,account_number,account_name").order("created_at", { ascending: false }),
       supabase.from("orders").select("id,order_number,total,delivery_status,escrow_status,created_at,vendor:vendors(name),buyer:buyers(name)").order("created_at", { ascending: false }).limit(100),
       supabase.from("disputes").select("id,reason,status,created_at,order:orders(id,order_number,total),buyer:buyers(name,phone)").eq("status", "open").order("created_at", { ascending: false }),
     ]);
-    setZones((z.data ?? []) as Zone[]);
+    setTiers(((t.data ?? []) as unknown as Tier[]).map((x) => ({ ...x, min_km: Number(x.min_km), max_km: Number(x.max_km), delivery_fee: Number(x.delivery_fee) })));
     setVendors((v.data ?? []) as Vendor[]);
     setOrders((o.data ?? []) as unknown as Order[]);
     setDisputes((d.data ?? []) as unknown as Dispute[]);
@@ -45,11 +45,25 @@ function Admin() {
     </div>
   );
 
-  const addZone = async () => {
-    if (!newZone.name.trim() || !newZone.fee) return;
-    const { error } = await supabase.from("zones").insert({ name: newZone.name.trim(), delivery_fee: Number(newZone.fee), active: true });
+  const addTier = async () => {
+    const minKm = Number(newTier.min_km);
+    const maxKm = Number(newTier.max_km);
+    const fee = Number(newTier.fee);
+    if (isNaN(minKm) || isNaN(maxKm) || isNaN(fee) || maxKm <= minKm) return toast.error("Enter valid tier");
+    const sortOrder = tiers.length + 1;
+    const { error } = await supabase.from("delivery_tiers").insert({ min_km: minKm, max_km: maxKm, delivery_fee: fee, sort_order: sortOrder });
     if (error) return toast.error(error.message);
-    setNewZone({ name: "", fee: "" }); load();
+    setNewTier({ min_km: "", max_km: "", fee: "" }); load();
+  };
+  const updateTier = async (t: Tier, patch: Partial<Tier>) => {
+    const { error } = await supabase.from("delivery_tiers").update(patch).eq("id", t.id);
+    if (error) return toast.error(error.message);
+    load();
+  };
+  const deleteTier = async (t: Tier) => {
+    if (!confirm(`Delete tier ${t.min_km}–${t.max_km}km?`)) return;
+    await supabase.from("delivery_tiers").delete().eq("id", t.id);
+    load();
   };
   const setVendorStatus = async (v: Vendor, status: string) => {
     await supabase.from("vendors").update({ status }).eq("id", v.id);
@@ -76,29 +90,27 @@ function Admin() {
       </header>
       <div className="px-4 pt-3">
         <div className="grid grid-cols-4 bg-muted rounded-full p-1 text-xs font-medium">
-          {(["zones","vendors","orders","disputes"] as const).map((t) => (
+          {(["delivery","vendors","orders","disputes"] as const).map((t) => (
             <button key={t} onClick={() => setTab(t)} className={`py-2 rounded-full capitalize ${tab === t ? "bg-background shadow" : "text-muted-foreground"}`}>{t}{t === "disputes" && disputes.length > 0 ? ` (${disputes.length})` : ""}</button>
           ))}
         </div>
       </div>
       <main className="p-4 space-y-3">
-        {tab === "zones" && (
+        {tab === "delivery" && (
           <>
-            <div className="bg-card border border-border rounded-2xl p-3 flex gap-2">
-              <Input placeholder="Zone name" value={newZone.name} onChange={(e) => setNewZone({ ...newZone, name: e.target.value })} />
-              <Input placeholder="₦ fee" inputMode="numeric" value={newZone.fee} onChange={(e) => setNewZone({ ...newZone, fee: e.target.value.replace(/\D/g, "") })} />
-              <Button onClick={addZone}>Add</Button>
+            <p className="text-xs text-muted-foreground">Distance tiers set delivery fees automatically. The highest tier's max km is the delivery radius — vendors and orders beyond it are blocked.</p>
+            <div className="bg-card border border-border rounded-2xl p-3 grid grid-cols-[1fr_1fr_1fr_auto] gap-2 items-end">
+              <div><label className="text-xs text-muted-foreground">Min km</label><Input inputMode="decimal" value={newTier.min_km} onChange={(e) => setNewTier({ ...newTier, min_km: e.target.value })} /></div>
+              <div><label className="text-xs text-muted-foreground">Max km</label><Input inputMode="decimal" value={newTier.max_km} onChange={(e) => setNewTier({ ...newTier, max_km: e.target.value })} /></div>
+              <div><label className="text-xs text-muted-foreground">₦ fee</label><Input inputMode="numeric" value={newTier.fee} onChange={(e) => setNewTier({ ...newTier, fee: e.target.value.replace(/\D/g, "") })} /></div>
+              <Button onClick={addTier}>Add</Button>
             </div>
-            {zones.map((z) => (
-              <div key={z.id} className="bg-card border border-border rounded-2xl p-3 flex items-center justify-between">
-                <div>
-                  <div className="font-semibold">{z.name}</div>
-                  <div className="text-xs text-muted-foreground">{formatPrice(z.delivery_fee)} delivery {z.active ? "" : "· inactive"}</div>
-                </div>
-                <div className="flex gap-2">
-                  <button onClick={async () => { await supabase.from("zones").update({ active: !z.active }).eq("id", z.id); load(); }} className="text-xs px-2 py-1 rounded border border-border">{z.active ? "Disable" : "Enable"}</button>
-                  <button onClick={async () => { if (confirm(`Delete ${z.name}?`)) { await supabase.from("zones").delete().eq("id", z.id); load(); } }} className="text-destructive"><Trash2 className="w-4 h-4" /></button>
-                </div>
+            {tiers.map((t) => (
+              <div key={t.id} className="bg-card border border-border rounded-2xl p-3 grid grid-cols-[1fr_1fr_1fr_auto] gap-2 items-center">
+                <Input inputMode="decimal" defaultValue={t.min_km} onBlur={(e) => Number(e.target.value) !== t.min_km && updateTier(t, { min_km: Number(e.target.value) })} />
+                <Input inputMode="decimal" defaultValue={t.max_km} onBlur={(e) => Number(e.target.value) !== t.max_km && updateTier(t, { max_km: Number(e.target.value) })} />
+                <Input inputMode="numeric" defaultValue={t.delivery_fee} onBlur={(e) => Number(e.target.value) !== t.delivery_fee && updateTier(t, { delivery_fee: Number(e.target.value) })} />
+                <button onClick={() => deleteTier(t)} className="text-destructive px-2"><Trash2 className="w-4 h-4" /></button>
               </div>
             ))}
           </>

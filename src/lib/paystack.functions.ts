@@ -1,9 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { haversineKm, findTier, maxRadiusKm, type Tier } from "@/lib/distance";
 
 const InitInput = z.object({
-  zoneId: z.string().uuid(),
+  lat: z.number().min(-90).max(90),
+  lng: z.number().min(-180).max(180),
+  address: z.string().min(1).max(500),
   callbackUrl: z.string().url(),
   items: z
     .array(
@@ -33,32 +36,40 @@ export const initPaystackCheckout = createServerFn({ method: "POST" })
       .maybeSingle();
     if (buyerErr || !buyer) throw new Error("Complete your buyer profile first");
 
-    // Load zone
-    const { data: zone, error: zoneErr } = await supabase
-      .from("zones")
-      .select("id,name,delivery_fee")
-      .eq("id", data.zoneId)
-      .maybeSingle();
-    if (zoneErr || !zone) throw new Error("Invalid delivery zone");
+    // Load delivery tiers
+    const { data: tiersRaw, error: tErr } = await supabase
+      .from("delivery_tiers")
+      .select("id,min_km,max_km,delivery_fee")
+      .order("sort_order");
+    if (tErr) throw new Error(tErr.message);
+    const tiers = (tiersRaw ?? []).map((t) => ({
+      id: t.id,
+      min_km: Number(t.min_km),
+      max_km: Number(t.max_km),
+      delivery_fee: Number(t.delivery_fee),
+    })) as Tier[];
+    if (tiers.length === 0) throw new Error("Delivery not configured");
+    const maxKm = maxRadiusKm(tiers);
 
-    // Load products with fresh prices/vendor + subaccount
+    // Load products with fresh prices/vendor + subaccount + coords
     const productIds = data.items.map((i) => i.productId);
     const { data: products, error: pErr } = await supabase
       .from("products")
-      .select("id,name,price,quantity,vendor_id,is_sold_out,vendor:vendors(id,paystack_subaccount_code,status)")
+      .select("id,name,price,quantity,vendor_id,is_sold_out,vendor:vendors(id,paystack_subaccount_code,status,latitude,longitude)")
       .in("id", productIds);
     if (pErr) throw new Error(pErr.message);
     if (!products || products.length !== productIds.length) throw new Error("Some items are no longer available");
 
     // Validate stock + build vendor groups
-    type Row = { productId: string; name: string; price: number; qty: number; vendorId: string; subaccount: string | null };
+    type Row = { productId: string; name: string; price: number; qty: number; vendorId: string; subaccount: string | null; vlat: number | null; vlng: number | null };
     const rows: Row[] = [];
     for (const item of data.items) {
       const p = products.find((x) => x.id === item.productId);
       if (!p) throw new Error("Item unavailable");
       if (p.is_sold_out || p.quantity < item.qty) throw new Error(`${p.name} is out of stock`);
-      const v = p.vendor as { id: string; paystack_subaccount_code: string | null; status: string } | null;
+      const v = p.vendor as { id: string; paystack_subaccount_code: string | null; status: string; latitude: number | null; longitude: number | null } | null;
       if (!v || v.status !== "active") throw new Error(`${p.name} vendor is not active`);
+      if (v.latitude == null || v.longitude == null) throw new Error(`${p.name} vendor location missing`);
       rows.push({
         productId: p.id,
         name: p.name,
@@ -66,6 +77,8 @@ export const initPaystackCheckout = createServerFn({ method: "POST" })
         qty: item.qty,
         vendorId: v.id,
         subaccount: v.paystack_subaccount_code,
+        vlat: v.latitude,
+        vlng: v.longitude,
       });
     }
 
@@ -74,8 +87,22 @@ export const initPaystackCheckout = createServerFn({ method: "POST" })
       return a;
     }, {});
     const vendorIds = Object.keys(grouped);
+
+    // Per-vendor distance + tier lookup
+    const vendorInfo: Record<string, { distance_km: number; fee: number }> = {};
+    for (const vid of vendorIds) {
+      const g = grouped[vid];
+      const km = haversineKm(
+        { lat: data.lat, lng: data.lng },
+        { lat: g[0].vlat as number, lng: g[0].vlng as number },
+      );
+      if (km > maxKm) throw new Error(`${g[0].name.split(" ")[0]}'s vendor is outside our delivery range`);
+      const tier = findTier(tiers, km);
+      if (!tier) throw new Error("No delivery tier for this distance");
+      vendorInfo[vid] = { distance_km: Math.round(km * 100) / 100, fee: tier.delivery_fee };
+    }
     const subtotal = rows.reduce((s, r) => s + r.price * r.qty, 0);
-    const deliveryFeeTotal = Number(zone.delivery_fee);
+    const deliveryFeeTotal = vendorIds.reduce((s, vid) => s + vendorInfo[vid].fee, 0);
     const total = subtotal + deliveryFeeTotal;
 
     // Create one order per vendor, shared payment reference
@@ -85,16 +112,18 @@ export const initPaystackCheckout = createServerFn({ method: "POST" })
       for (const vid of vendorIds) {
         const group = grouped[vid];
         const sub = group.reduce((s, r) => s + r.price * r.qty, 0);
-        const df = Math.round((deliveryFeeTotal / vendorIds.length) * 100) / 100;
+        const df = vendorInfo[vid].fee;
         const { data: order, error } = await supabase
           .from("orders")
           .insert({
             buyer_id: userId,
             vendor_id: vid,
-            zone_id: zone.id,
             subtotal: sub,
             delivery_fee: df,
             total: sub + df,
+            distance_km: vendorInfo[vid].distance_km,
+            delivery_lat: data.lat,
+            delivery_lng: data.lng,
             payment_status: "unpaid",
             escrow_status: "none",
             delivery_status: "confirmed",
@@ -120,6 +149,13 @@ export const initPaystackCheckout = createServerFn({ method: "POST" })
       throw e;
     }
 
+    // Persist buyer's saved delivery location
+    await supabase.from("buyers").update({
+      latitude: data.lat,
+      longitude: data.lng,
+      delivery_address: data.address,
+    }).eq("id", userId);
+
     // Build split — only include vendors with a subaccount. If none have one,
     // fall back to a plain transaction and settle payouts manually.
     const subaccountShares = vendorIds
@@ -139,7 +175,6 @@ export const initPaystackCheckout = createServerFn({ method: "POST" })
       metadata: {
         order_ids: orderIds,
         buyer_id: userId,
-        zone_id: zone.id,
       },
     };
     if (subaccountShares.length > 0) {

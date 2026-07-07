@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { LocationPicker } from "@/components/app/LocationPicker";
+import { MapPin, Check } from "lucide-react";
 import logo from "@/assets/logo.png";
 
 export const Route = createFileRoute("/vendor/signup")({ component: VendorSignup });
@@ -12,12 +14,15 @@ export const Route = createFileRoute("/vendor/signup")({ component: VendorSignup
 function VendorSignup() {
   const nav = useNavigate();
   const [f, setF] = useState({ name: "", email: "", phone: "", password: "", bank_name: "", account_number: "", account_name: "" });
+  const [loc, setLoc] = useState<{ lat: number; lng: number; address: string } | null>(null);
+  const [showMap, setShowMap] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (f.password.length < 6) return toast.error("Password too short");
     if (!/^\d{10}$/.test(f.account_number)) return toast.error("Enter a valid 10-digit account number");
+    if (!loc) return toast.error("Pin your store location");
     setBusy(true);
     try {
       // If someone is already signed in, sign them out first — vendor accounts
@@ -48,6 +53,9 @@ function VendorSignup() {
         bank_name: f.bank_name,
         account_number: f.account_number,
         account_name: f.account_name,
+        latitude: loc.lat,
+        longitude: loc.lng,
+        address: loc.address,
         status: "active",
       });
       if (vErr) throw new Error(vErr.message);
@@ -73,6 +81,24 @@ function VendorSignup() {
         <div><Label>Phone</Label><Input required value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} /></div>
         <div><Label>Email</Label><Input type="email" required value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} /></div>
         <div><Label>Password</Label><Input type="password" required value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} /></div>
+        <div>
+          <Label>Store location</Label>
+          {loc && !showMap ? (
+            <div className="rounded-xl border border-border p-3 flex items-start gap-2 bg-card">
+              <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium line-clamp-2">{loc.address || `${loc.lat.toFixed(5)}, ${loc.lng.toFixed(5)}`}</div>
+                <button type="button" onClick={() => setShowMap(true)} className="text-xs text-primary mt-1">Change</button>
+              </div>
+            </div>
+          ) : showMap ? (
+            <div className="mt-1"><LocationPicker initial={loc ? { lat: loc.lat, lng: loc.lng } : null} onConfirm={(l) => { setLoc(l); setShowMap(false); }} confirmLabel="Set store location" /></div>
+          ) : (
+            <button type="button" onClick={() => setShowMap(true)} className="w-full mt-1 h-24 rounded-xl border-2 border-dashed border-border grid place-items-center text-sm text-muted-foreground">
+              <span className="flex items-center gap-2"><MapPin className="w-4 h-4" /> Pin your store</span>
+            </button>
+          )}
+        </div>
         <div className="pt-2 border-t border-border" />
         <p className="text-xs text-muted-foreground">Payout account (Naira)</p>
         <div><Label>Bank name</Label><Input required value={f.bank_name} onChange={(e) => setF({ ...f, bank_name: e.target.value })} placeholder="e.g. GTBank" /></div>
