@@ -1,14 +1,15 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { MobileShell } from "@/components/app/BottomNav";
 import { readCart, setQty, removeFromCart, subscribeCart } from "@/lib/cart";
-import { readZoneId } from "@/lib/zone";
+import { readLocation } from "@/lib/location";
+import { haversineKm, findTier, maxRadiusKm, type Tier } from "@/lib/distance";
 import { formatPrice } from "@/lib/format";
 import { Button } from "@/components/ui/button";
-import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
+import { Minus, Plus, Trash2, ShoppingBag, MapPin, AlertTriangle } from "lucide-react";
 
-type Row = { id: string; name: string; price: number; photo_url: string | null; quantity: number; vendor: { id: string; name: string } | null };
+type Row = { id: string; name: string; price: number; photo_url: string | null; quantity: number; vendor: { id: string; name: string; latitude: number | null; longitude: number | null } | null };
 
 export const Route = createFileRoute("/cart")({ component: CartPage });
 
@@ -16,21 +17,18 @@ function CartPage() {
   const nav = useNavigate();
   const [rows, setRows] = useState<Row[]>([]);
   const [lines, setLines] = useState(readCart());
-  const [deliveryFee, setDeliveryFee] = useState(0);
-  const [zoneName, setZoneName] = useState<string>("");
+  const [tiers, setTiers] = useState<Tier[]>([]);
+  const location = useMemo(() => readLocation(), []);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => subscribeCart(() => setLines(readCart())), []);
 
   useEffect(() => {
     (async () => {
-      const zid = readZoneId();
-      if (zid) {
-        const { data: z } = await supabase.from("zones").select("name,delivery_fee").eq("id", zid).maybeSingle();
-        if (z) { setDeliveryFee(Number(z.delivery_fee)); setZoneName(z.name); }
-      }
+      const { data: t } = await supabase.from("delivery_tiers").select("id,min_km,max_km,delivery_fee").order("sort_order");
+      setTiers(((t ?? []) as unknown as Tier[]).map((x) => ({ ...x, min_km: Number(x.min_km), max_km: Number(x.max_km), delivery_fee: Number(x.delivery_fee) })));
       if (lines.length === 0) { setRows([]); setLoading(false); return; }
-      const { data } = await supabase.from("products").select("id,name,price,photo_url,quantity,vendor:vendors(id,name)").in("id", lines.map((l) => l.productId));
+      const { data } = await supabase.from("products").select("id,name,price,photo_url,quantity,vendor:vendors(id,name,latitude,longitude)").in("id", lines.map((l) => l.productId));
       setRows((data ?? []) as unknown as Row[]);
       setLoading(false);
     })();
@@ -38,7 +36,29 @@ function CartPage() {
 
   const items = rows.map((r) => ({ ...r, qty: lines.find((l) => l.productId === r.id)?.qty ?? 0 })).filter((r) => r.qty > 0);
   const subtotal = items.reduce((s, r) => s + Number(r.price) * r.qty, 0);
+
+  const maxKm = maxRadiusKm(tiers);
+  const vendorMap = new Map<string, { lat: number; lng: number; name: string }>();
+  items.forEach((r) => {
+    if (r.vendor?.id && r.vendor.latitude != null && r.vendor.longitude != null) {
+      vendorMap.set(r.vendor.id, { lat: r.vendor.latitude, lng: r.vendor.longitude, name: r.vendor.name });
+    }
+  });
+  let outOfRange = false;
+  let deliveryFee = 0;
+  const vendorFees: { name: string; fee: number; km: number }[] = [];
+  if (location) {
+    for (const [, v] of vendorMap) {
+      const km = haversineKm({ lat: location.lat, lng: location.lng }, v);
+      if (km > maxKm) { outOfRange = true; break; }
+      const tier = findTier(tiers, km);
+      if (!tier) { outOfRange = true; break; }
+      deliveryFee += tier.delivery_fee;
+      vendorFees.push({ name: v.name, fee: tier.delivery_fee, km });
+    }
+  }
   const total = subtotal + (items.length ? deliveryFee : 0);
+  const canCheckout = items.length > 0 && !!location && !outOfRange && tiers.length > 0;
 
   return (
     <MobileShell>
@@ -78,11 +98,16 @@ function CartPage() {
             ))}
 
             <div className="bg-card border border-border rounded-2xl p-4 space-y-2 mt-4">
+              {!location ? (
+                <div className="flex items-center gap-2 text-sm text-destructive"><MapPin className="w-4 h-4" />Set a delivery location on the home page.</div>
+              ) : outOfRange ? (
+                <div className="flex items-start gap-2 text-sm text-destructive"><AlertTriangle className="w-4 h-4 mt-0.5" /><span>We don't deliver to this area yet.</span></div>
+              ) : null}
               <div className="flex justify-between text-sm"><span className="text-muted-foreground">Subtotal</span><span>{formatPrice(subtotal)}</span></div>
-              <div className="flex justify-between text-sm"><span className="text-muted-foreground">Delivery {zoneName && `(${zoneName})`}</span><span>{formatPrice(deliveryFee)}</span></div>
+              <div className="flex justify-between text-sm"><span className="text-muted-foreground">Delivery{vendorFees.length > 1 ? ` (${vendorFees.length} vendors)` : ""}</span><span>{formatPrice(deliveryFee)}</span></div>
               <div className="flex justify-between font-bold text-lg pt-2 border-t border-border"><span>Total</span><span className="text-primary">{formatPrice(total)}</span></div>
             </div>
-            <Button size="lg" className="w-full mt-3" onClick={() => nav({ to: "/checkout" })}>Checkout</Button>
+            <Button size="lg" className="w-full mt-3" disabled={!canCheckout} onClick={() => nav({ to: "/checkout" })}>Checkout</Button>
           </>
         )}
       </main>
