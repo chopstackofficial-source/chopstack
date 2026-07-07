@@ -1,33 +1,28 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { writeZoneId } from "@/lib/zone";
+import { writeLocation } from "@/lib/location";
+import { LocationPicker } from "@/components/app/LocationPicker";
+import { MapPin, Check } from "lucide-react";
 import logo from "@/assets/logo.png";
 
 export const Route = createFileRoute("/signup")({ component: Signup });
 
-type Zone = { id: string; name: string };
-
 function Signup() {
   const nav = useNavigate();
-  const [f, setF] = useState({ name: "", email: "", phone: "", password: "", zone_id: "", delivery_address: "" });
-  const [zones, setZones] = useState<Zone[]>([]);
+  const [f, setF] = useState({ name: "", email: "", phone: "", password: "" });
+  const [loc, setLoc] = useState<{ lat: number; lng: number; address: string } | null>(null);
+  const [showMap, setShowMap] = useState(false);
   const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    supabase.from("zones").select("id,name").eq("active", true).order("name").then(({ data }) => {
-      setZones((data ?? []) as Zone[]);
-      if (data && data[0] && !f.zone_id) setF((p) => ({ ...p, zone_id: data[0].id }));
-    });
-  }, []);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (f.password.length < 6) return toast.error("Password too short");
+    if (!loc) return toast.error("Set your delivery location");
     setBusy(true);
     try {
       const { data: cur } = await supabase.auth.getUser();
@@ -52,11 +47,12 @@ function Signup() {
         name: f.name,
         email: f.email,
         phone: f.phone || null,
-        zone_id: f.zone_id || null,
-        delivery_address: f.delivery_address,
+        delivery_address: loc.address,
+        latitude: loc.lat,
+        longitude: loc.lng,
       });
       if (bErr) throw new Error(bErr.message);
-      if (f.zone_id) writeZoneId(f.zone_id);
+      writeLocation(loc);
       toast.success("Welcome!");
       nav({ to: "/" });
     } catch (err) {
@@ -79,17 +75,24 @@ function Signup() {
         <div><Label>Phone</Label><Input value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} /></div>
         <div><Label>Password</Label><Input type="password" required value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} /></div>
         <div>
-          <Label>Your delivery zone</Label>
-          <select required className="w-full h-10 rounded-md bg-input border border-border px-3" value={f.zone_id} onChange={(e) => setF({ ...f, zone_id: e.target.value })}>
-            {zones.map((z) => <option key={z.id} value={z.id}>{z.name}</option>)}
-          </select>
-          <p className="text-xs text-muted-foreground mt-1">You'll only see stock available in your zone.</p>
-        </div>
-        <div>
-          <Label>Delivery address or nearest landmark</Label>
-          <textarea required rows={2} className="w-full rounded-md bg-input border border-border px-3 py-2 text-sm"
-            value={f.delivery_address} onChange={(e) => setF({ ...f, delivery_address: e.target.value })}
-            placeholder="Flat 4, 12 Allen Avenue, near Ikeja City Mall" />
+          <Label>Delivery location</Label>
+          {loc && !showMap ? (
+            <div className="rounded-xl border border-border p-3 flex items-start gap-2 bg-card">
+              <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium line-clamp-2">{loc.address || `${loc.lat.toFixed(5)}, ${loc.lng.toFixed(5)}`}</div>
+                <button type="button" onClick={() => setShowMap(true)} className="text-xs text-primary mt-1">Change</button>
+              </div>
+            </div>
+          ) : showMap ? (
+            <div className="mt-1">
+              <LocationPicker initial={loc ? { lat: loc.lat, lng: loc.lng } : null} onConfirm={(l) => { setLoc(l); setShowMap(false); }} />
+            </div>
+          ) : (
+            <button type="button" onClick={() => setShowMap(true)} className="w-full mt-1 h-24 rounded-xl border-2 border-dashed border-border grid place-items-center text-sm text-muted-foreground">
+              <span className="flex items-center gap-2"><MapPin className="w-4 h-4" /> Pin your delivery spot</span>
+            </button>
+          )}
         </div>
         <Button type="submit" size="lg" className="w-full" disabled={busy}>{busy ? "Creating…" : "Sign up"}</Button>
       </form>
