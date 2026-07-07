@@ -1,16 +1,17 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { MobileShell } from "@/components/app/BottomNav";
 import { readCart } from "@/lib/cart";
-import { readZoneId } from "@/lib/zone";
+import { readLocation } from "@/lib/location";
+import { haversineKm, findTier, maxRadiusKm, type Tier } from "@/lib/distance";
 import { useAuth } from "@/lib/auth";
 import { formatPrice } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { initPaystackCheckout } from "@/lib/paystack.functions";
 
-type Row = { id: string; name: string; price: number; vendor_id: string; quantity: number };
+type Row = { id: string; name: string; price: number; vendor_id: string; quantity: number; vendor: { latitude: number | null; longitude: number | null } | null };
 
 export const Route = createFileRoute("/checkout")({ component: Checkout });
 
@@ -18,47 +19,59 @@ function Checkout() {
   const nav = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const [rows, setRows] = useState<Row[]>([]);
-  const [deliveryFee, setDeliveryFee] = useState(0);
-  const [zoneName, setZoneName] = useState("");
-  const [zoneId, setZoneId] = useState<string | null>(null);
+  const [tiers, setTiers] = useState<Tier[]>([]);
+  const location = useMemo(() => readLocation(), []);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     const lines = readCart();
     if (lines.length === 0) { nav({ to: "/cart" }); return; }
+    if (!location) { nav({ to: "/" }); return; }
     (async () => {
-      const zid = readZoneId();
-      setZoneId(zid);
-      if (zid) {
-        const { data: z } = await supabase.from("zones").select("name,delivery_fee").eq("id", zid).maybeSingle();
-        if (z) { setDeliveryFee(Number(z.delivery_fee)); setZoneName(z.name); }
-      }
-      const { data } = await supabase.from("products").select("id,name,price,vendor_id,quantity").in("id", lines.map((l) => l.productId));
+      const { data: t } = await supabase.from("delivery_tiers").select("id,min_km,max_km,delivery_fee").order("sort_order");
+      setTiers(((t ?? []) as unknown as Tier[]).map((x) => ({ ...x, min_km: Number(x.min_km), max_km: Number(x.max_km), delivery_fee: Number(x.delivery_fee) })));
+      const { data } = await supabase.from("products").select("id,name,price,vendor_id,quantity,vendor:vendors(latitude,longitude)").in("id", lines.map((l) => l.productId));
       setRows((data ?? []).map((r) => ({ ...r, qty: lines.find((l) => l.productId === r.id)?.qty ?? 0 })) as unknown as Row[]);
     })();
-  }, [nav]);
+  }, [nav, location]);
 
   const lines = readCart();
   const items = rows.map((r) => ({ ...r, qty: lines.find((l) => l.productId === r.id)?.qty ?? 0 })).filter((r) => r.qty > 0);
   const subtotal = items.reduce((s, r) => s + Number(r.price) * r.qty, 0);
-  const total = subtotal + deliveryFee;
 
-  // Group by vendor
-  const grouped = items.reduce((acc, r) => {
-    (acc[r.vendor_id] ||= []).push(r);
-    return acc;
-  }, {} as Record<string, typeof items>);
+  const maxKm = maxRadiusKm(tiers);
+  const vendorFees = new Map<string, number>();
+  let outOfRange = false;
+  if (location && tiers.length) {
+    const seen = new Set<string>();
+    for (const r of items) {
+      if (seen.has(r.vendor_id)) continue;
+      seen.add(r.vendor_id);
+      const v = r.vendor;
+      if (!v || v.latitude == null || v.longitude == null) { outOfRange = true; break; }
+      const km = haversineKm({ lat: location.lat, lng: location.lng }, { lat: v.latitude, lng: v.longitude });
+      if (km > maxKm) { outOfRange = true; break; }
+      const tier = findTier(tiers, km);
+      if (!tier) { outOfRange = true; break; }
+      vendorFees.set(r.vendor_id, tier.delivery_fee);
+    }
+  }
+  const deliveryFee = Array.from(vendorFees.values()).reduce((a, b) => a + b, 0);
+  const total = subtotal + deliveryFee;
 
   const placeOrder = async () => {
     if (!user) return;
-    if (!zoneId) return toast.error("Pick a delivery zone first");
+    if (!location) return toast.error("Set your delivery location first");
+    if (outOfRange) return toast.error("Some vendors are outside our delivery range");
     if (items.length === 0) return toast.error("Cart is empty");
     setBusy(true);
     try {
       const callbackUrl = `${window.location.origin}/checkout/callback`;
       const res = await initPaystackCheckout({
         data: {
-          zoneId,
+          lat: location.lat,
+          lng: location.lng,
+          address: location.address,
           callbackUrl,
           items: items.map((r) => ({ productId: r.id, qty: r.qty })),
         },
@@ -95,7 +108,7 @@ function Checkout() {
       <main className="p-4 space-y-4">
         <div className="bg-card border border-border rounded-2xl p-4">
           <div className="text-xs uppercase text-muted-foreground">Delivering to</div>
-          <div className="font-semibold">{zoneName || "Select zone"}</div>
+          <div className="font-semibold line-clamp-2">{location?.address || "Set location"}</div>
         </div>
         <div className="bg-card border border-border rounded-2xl p-4 space-y-2">
           {items.map((r) => (
@@ -108,8 +121,9 @@ function Checkout() {
           <div className="flex justify-between text-sm"><span>Delivery</span><span>{formatPrice(deliveryFee)}</span></div>
           <div className="flex justify-between font-bold pt-2 border-t border-border"><span>Total</span><span className="text-primary">{formatPrice(total)}</span></div>
         </div>
+        {outOfRange && <p className="text-sm text-destructive">We don't deliver to this area yet.</p>}
         <p className="text-xs text-muted-foreground">Payment via Paystack. Funds are held in escrow and released after delivery.</p>
-        <Button size="lg" className="w-full" disabled={busy} onClick={placeOrder}>{busy ? "Placing order…" : `Pay ${formatPrice(total)}`}</Button>
+        <Button size="lg" className="w-full" disabled={busy || outOfRange || !location} onClick={placeOrder}>{busy ? "Placing order…" : `Pay ${formatPrice(total)}`}</Button>
       </main>
     </MobileShell>
   );
