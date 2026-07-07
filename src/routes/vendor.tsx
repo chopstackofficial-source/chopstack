@@ -6,41 +6,40 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatPrice } from "@/lib/format";
-import { Plus, Pencil, Trash2, Check, X, LogOut } from "lucide-react";
+import { Plus, Pencil, Trash2, X, LogOut, MapPin } from "lucide-react";
+import { LocationPicker } from "@/components/app/LocationPicker";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/vendor")({ component: VendorDashboard });
 
-type Zone = { id: string; name: string };
-type Product = { id: string; name: string; price: number; quantity: number; is_sold_out: boolean; photo_url: string | null; zones: string[] };
+type Product = { id: string; name: string; price: number; quantity: number; is_sold_out: boolean; photo_url: string | null };
 type Order = {
   id: string; order_number: string; total: number; delivery_status: string; escrow_status: string;
   created_at: string; delivered_at: string | null; escrow_release_at: string | null;
   buyer: { name: string; phone: string | null; delivery_address: string | null } | null;
-  zone: { name: string } | null;
+  distance_km: number | null;
   items: { id: string; name_snapshot: string; quantity: number; unit_price: number }[];
 };
 
 function VendorDashboard() {
   const nav = useNavigate();
   const location = useLocation();
-  const { user, vendor, loading } = useAuth();
+  const { user, vendor, loading, refresh } = useAuth();
   const [tab, setTab] = useState<"orders" | "products">("orders");
-  const [zones, setZones] = useState<Zone[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
+  const [showLocation, setShowLocation] = useState(false);
 
   const loadAll = useCallback(async () => {
     if (!user) return;
-    const [z, p, o] = await Promise.all([
-      supabase.from("zones").select("id,name").eq("active", true).order("name"),
-      supabase.from("products").select("id,name,price,quantity,is_sold_out,photo_url,product_zones(zone_id)").eq("vendor_id", user.id).order("created_at", { ascending: false }),
-      supabase.from("orders").select("id,order_number,total,delivery_status,escrow_status,created_at,delivered_at,escrow_release_at,buyer:buyers(name,phone,delivery_address),zone:zones(name)").eq("vendor_id", user.id).eq("payment_status", "paid").order("created_at", { ascending: false }),
+    const [p, o] = await Promise.all([
+      supabase.from("products").select("id,name,price,quantity,is_sold_out,photo_url").eq("vendor_id", user.id).order("created_at", { ascending: false }),
+      supabase.from("orders").select("id,order_number,total,delivery_status,escrow_status,created_at,delivered_at,escrow_release_at,distance_km,buyer:buyers(name,phone,delivery_address)").eq("vendor_id", user.id).eq("payment_status", "paid").order("created_at", { ascending: false }),
     ]);
-    setZones((z.data ?? []) as Zone[]);
-    setProducts(((p.data ?? []) as unknown as (Product & { product_zones: { zone_id: string }[] })[]).map((r) => ({ ...r, zones: r.product_zones.map((pz) => pz.zone_id) })));
+    setProducts((p.data ?? []) as unknown as Product[]);
     const orderRows = (o.data ?? []) as unknown as Order[];
     const withItems = await Promise.all(orderRows.map(async (row) => {
       const { data: items } = await supabase.from("order_items").select("id,name_snapshot,quantity,unit_price").eq("order_id", row.id);
@@ -108,6 +107,15 @@ function VendorDashboard() {
     loadAll();
   };
 
+  const saveLocation = async (loc: { lat: number; lng: number; address: string }) => {
+    if (!user) return;
+    const { error } = await supabase.from("vendors").update({ latitude: loc.lat, longitude: loc.lng, address: loc.address }).eq("id", user.id);
+    if (error) return toast.error(error.message);
+    toast.success("Store location updated");
+    setShowLocation(false);
+    refresh();
+  };
+
   return (
     <div className="min-h-screen bg-background max-w-md mx-auto pb-24">
       <header className="sticky top-0 z-40 bg-background/95 backdrop-blur border-b border-border px-4 py-3 flex items-center justify-between">
@@ -117,6 +125,22 @@ function VendorDashboard() {
         </div>
         <button onClick={async () => { await supabase.auth.signOut(); nav({ to: "/" }); }} className="text-muted-foreground"><LogOut className="w-5 h-5" /></button>
       </header>
+      <div className="px-4 pt-3">
+        <button onClick={() => setShowLocation(true)} className="w-full flex items-center gap-2 text-sm bg-card border border-border rounded-2xl p-3 text-left">
+          <MapPin className="w-4 h-4 text-primary shrink-0" />
+          <div className="flex-1 min-w-0">
+            <div className="text-xs text-muted-foreground">Store location</div>
+            <div className="line-clamp-1 font-medium">{vendor.address || (vendor.latitude != null ? `${vendor.latitude.toFixed(4)}, ${vendor.longitude?.toFixed(4)}` : "Set store location")}</div>
+          </div>
+          <span className="text-xs text-primary">Change</span>
+        </button>
+      </div>
+      <Dialog open={showLocation} onOpenChange={setShowLocation}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Store location</DialogTitle></DialogHeader>
+          <LocationPicker initial={vendor.latitude != null && vendor.longitude != null ? { lat: vendor.latitude, lng: vendor.longitude } : null} onConfirm={saveLocation} confirmLabel="Save store location" />
+        </DialogContent>
+      </Dialog>
       <div className="px-4 pt-3">
         <div className="grid grid-cols-2 bg-muted rounded-full p-1 text-sm font-medium">
           <button onClick={() => setTab("orders")} className={`py-2 rounded-full ${tab === "orders" ? "bg-background shadow" : "text-muted-foreground"}`}>Orders ({orders.length})</button>
@@ -134,7 +158,7 @@ function VendorDashboard() {
                 <div>
                   <div className="font-bold">#{o.order_number}</div>
                   <div className="text-xs text-muted-foreground">{o.buyer?.name} · {o.buyer?.phone ?? "no phone"}</div>
-                  <div className="text-xs text-muted-foreground">{o.zone?.name} · {o.buyer?.delivery_address}</div>
+                  <div className="text-xs text-muted-foreground line-clamp-2">{o.distance_km != null ? `${o.distance_km}km · ` : ""}{o.buyer?.delivery_address}</div>
                 </div>
                 <div className="text-primary font-bold">{formatPrice(Number(o.total))}</div>
               </div>
@@ -161,7 +185,7 @@ function VendorDashboard() {
           <Button className="w-full" onClick={() => { setEditing(null); setShowForm(true); }}>
             <Plus className="w-4 h-4 mr-1" /> Add stock
           </Button>
-          {showForm && <ProductForm zones={zones} initial={editing} onDone={() => { setShowForm(false); setEditing(null); loadAll(); }} vendorId={user.id} />}
+          {showForm && <ProductForm initial={editing} onDone={() => { setShowForm(false); setEditing(null); loadAll(); }} vendorId={user.id} />}
           {products.length === 0 ? (
             <div className="text-center py-12 text-sm text-muted-foreground">No stock yet.</div>
           ) : products.map((p) => (
@@ -186,11 +210,10 @@ function VendorDashboard() {
   );
 }
 
-function ProductForm({ zones, initial, onDone, vendorId }: { zones: Zone[]; initial: Product | null; onDone: () => void; vendorId: string }) {
+function ProductForm({ initial, onDone, vendorId }: { initial: Product | null; onDone: () => void; vendorId: string }) {
   const [name, setName] = useState(initial?.name ?? "");
   const [price, setPrice] = useState(String(initial?.price ?? ""));
   const [quantity, setQuantity] = useState(String(initial?.quantity ?? ""));
-  const [zoneIds, setZoneIds] = useState<string[]>(initial?.zones ?? zones.map((z) => z.id));
   const [photoUrl, setPhotoUrl] = useState<string | null>(initial?.photo_url ?? null);
   const [uploading, setUploading] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -208,20 +231,15 @@ function ProductForm({ zones, initial, onDone, vendorId }: { zones: Zone[]; init
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!photoUrl) return toast.error("Add a photo");
-    if (zoneIds.length === 0) return toast.error("Pick at least one zone");
     setBusy(true);
     const payload = { name, price: Number(price), quantity: Number(quantity), photo_url: photoUrl, vendor_id: vendorId };
-    let productId = initial?.id;
     if (initial) {
       const { error } = await supabase.from("products").update(payload).eq("id", initial.id);
       if (error) { setBusy(false); return toast.error(error.message); }
-      await supabase.from("product_zones").delete().eq("product_id", initial.id);
     } else {
-      const { data, error } = await supabase.from("products").insert(payload).select("id").single();
+      const { error } = await supabase.from("products").insert(payload);
       if (error) { setBusy(false); return toast.error(error.message); }
-      productId = data.id;
     }
-    if (productId) await supabase.from("product_zones").insert(zoneIds.map((z) => ({ product_id: productId, zone_id: z })));
     setBusy(false);
     toast.success(initial ? "Updated" : "Live");
     onDone();
@@ -246,19 +264,6 @@ function ProductForm({ zones, initial, onDone, vendorId }: { zones: Zone[]; init
       <div className="grid grid-cols-2 gap-3">
         <div><Label>Price ₦</Label><Input required inputMode="numeric" value={price} onChange={(e) => setPrice(e.target.value.replace(/\D/g, ""))} /></div>
         <div><Label>Quantity</Label><Input required inputMode="numeric" value={quantity} onChange={(e) => setQuantity(e.target.value.replace(/\D/g, ""))} /></div>
-      </div>
-      <div>
-        <Label>Available in zones</Label>
-        <div className="mt-1 flex flex-wrap gap-1.5">
-          {zones.map((z) => {
-            const on = zoneIds.includes(z.id);
-            return (
-              <button key={z.id} type="button" onClick={() => setZoneIds(on ? zoneIds.filter((x) => x !== z.id) : [...zoneIds, z.id])} className={`px-3 py-1.5 rounded-full text-xs border ${on ? "bg-primary text-primary-foreground border-primary" : "border-border"}`}>
-                {on && <Check className="w-3 h-3 inline mr-1" />}{z.name}
-              </button>
-            );
-          })}
-        </div>
       </div>
       <Button type="submit" className="w-full" disabled={busy || uploading}>{busy ? "Saving…" : initial ? "Save" : "Go live"}</Button>
     </form>
