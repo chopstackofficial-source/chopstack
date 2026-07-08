@@ -29,12 +29,13 @@ export const aiSearchProducts = createServerFn({ method: "POST" })
 
     const { data: products } = await supabase
       .from("products")
-      .select("id,name,price,quantity,vendor:vendors(name,status,latitude,longitude)")
+      .select("id,name,price,quantity,is_farm_product,vendor:vendors(name,status,latitude,longitude)")
       .eq("is_sold_out", false)
       .gt("quantity", 0);
 
-    type PRow = { id: string; name: string; price: number; quantity: number; vendor: { name: string; status: string; latitude: number | null; longitude: number | null } | null };
+    type PRow = { id: string; name: string; price: number; quantity: number; is_farm_product: boolean; vendor: { name: string; status: string; latitude: number | null; longitude: number | null } | null };
     const stock = ((products ?? []) as unknown as PRow[]).filter((p) => {
+      if (p.is_farm_product) return true;
       const v = p.vendor;
       if (!v || v.status !== "active") return false;
       if (v.latitude == null || v.longitude == null) return false;
@@ -43,7 +44,7 @@ export const aiSearchProducts = createServerFn({ method: "POST" })
     });
     if (stock.length === 0) return { matches: [], message: "Nothing in stock right now." };
 
-    const catalog = stock.map((p) => ({ id: p.id, name: p.name, price: Number(p.price), vendor: p.vendor?.name }));
+    const catalog = stock.map((p) => ({ id: p.id, name: p.name, price: Number(p.price), vendor: p.is_farm_product ? "Farm" : p.vendor?.name }));
 
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("Missing LOVABLE_API_KEY");
