@@ -9,7 +9,7 @@ import { formatPrice } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Minus, Plus, Trash2, ShoppingBag, MapPin, AlertTriangle } from "lucide-react";
 
-type Row = { id: string; name: string; price: number; photo_url: string | null; quantity: number; vendor: { id: string; name: string; latitude: number | null; longitude: number | null } | null };
+type Row = { id: string; name: string; price: number; photo_url: string | null; quantity: number; is_farm_product: boolean; farm_delivery_fee: number | null; vendor: { id: string; name: string; latitude: number | null; longitude: number | null } | null };
 
 export const Route = createFileRoute("/cart")({ component: CartPage });
 
@@ -28,7 +28,7 @@ function CartPage() {
       const { data: t } = await supabase.from("delivery_tiers").select("id,min_km,max_km,delivery_fee").order("sort_order");
       setTiers(((t ?? []) as unknown as Tier[]).map((x) => ({ ...x, min_km: Number(x.min_km), max_km: Number(x.max_km), delivery_fee: Number(x.delivery_fee) })));
       if (lines.length === 0) { setRows([]); setLoading(false); return; }
-      const { data } = await supabase.from("products").select("id,name,price,photo_url,quantity,vendor:vendors(id,name,latitude,longitude)").in("id", lines.map((l) => l.productId));
+      const { data } = await supabase.from("products").select("id,name,price,photo_url,quantity,is_farm_product,farm_delivery_fee,vendor:vendors(id,name,latitude,longitude)").in("id", lines.map((l) => l.productId));
       setRows((data ?? []) as unknown as Row[]);
       setLoading(false);
     })();
@@ -40,6 +40,7 @@ function CartPage() {
   const maxKm = maxRadiusKm(tiers);
   const vendorMap = new Map<string, { lat: number; lng: number; name: string }>();
   items.forEach((r) => {
+    if (r.is_farm_product) return;
     if (r.vendor?.id && r.vendor.latitude != null && r.vendor.longitude != null) {
       vendorMap.set(r.vendor.id, { lat: r.vendor.latitude, lng: r.vendor.longitude, name: r.vendor.name });
     }
@@ -47,7 +48,11 @@ function CartPage() {
   let outOfRange = false;
   let deliveryFee = 0;
   const vendorFees: { name: string; fee: number; km: number }[] = [];
-  if (location) {
+  // Farm items add their per-listing fee, no distance needed
+  const farmFee = items.reduce((s, r) => r.is_farm_product ? s + Number(r.farm_delivery_fee ?? 0) * r.qty : s, 0);
+  deliveryFee += farmFee;
+  const hasNonFarm = items.some((r) => !r.is_farm_product);
+  if (location && hasNonFarm) {
     for (const [, v] of vendorMap) {
       const km = haversineKm({ lat: location.lat, lng: location.lng }, v);
       if (km > maxKm) { outOfRange = true; break; }
@@ -58,7 +63,7 @@ function CartPage() {
     }
   }
   const total = subtotal + (items.length ? deliveryFee : 0);
-  const canCheckout = items.length > 0 && !!location && !outOfRange && tiers.length > 0;
+  const canCheckout = items.length > 0 && !outOfRange && (!hasNonFarm || (!!location && tiers.length > 0));
 
   return (
     <MobileShell>
@@ -98,7 +103,7 @@ function CartPage() {
             ))}
 
             <div className="bg-card border border-border rounded-2xl p-4 space-y-2 mt-4">
-              {!location ? (
+              {!location && hasNonFarm ? (
                 <div className="flex items-center gap-2 text-sm text-destructive"><MapPin className="w-4 h-4" />Set a delivery location on the home page.</div>
               ) : outOfRange ? (
                 <div className="flex items-start gap-2 text-sm text-destructive"><AlertTriangle className="w-4 h-4 mt-0.5" /><span>We don't deliver to this area yet.</span></div>
