@@ -7,11 +7,11 @@ import { readLocation, writeLocation, type SavedLocation } from "@/lib/location"
 import { addToCart } from "@/lib/cart";
 import { aiSearchProducts } from "@/lib/ai-search.functions";
 import { formatPrice } from "@/lib/format";
-import { haversineKm, maxRadiusKm, findTier, type Tier } from "@/lib/distance";
+import { haversineKm, maxRadiusKm, type Tier } from "@/lib/distance";
 import { LocationPicker } from "@/components/app/LocationPicker";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/lib/auth";
-import { MapPin, ChevronDown, Plus, Check, Sparkles, Loader2 } from "lucide-react";
+import { MapPin, ChevronDown, Plus, Check, Sparkles, Loader2, Leaf } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 
@@ -21,6 +21,7 @@ type Product = {
   photo_url: string | null;
   price: number;
   quantity: number;
+  is_farm_product: boolean;
   vendor: { name: string; latitude: number | null; longitude: number | null } | null;
 };
 
@@ -63,12 +64,13 @@ function Home() {
     (async () => {
       const { data } = await supabase
         .from("products")
-        .select("id,name,photo_url,price,quantity,vendor:vendors(name,latitude,longitude,status)")
+        .select("id,name,photo_url,price,quantity,is_farm_product,vendor:vendors(name,latitude,longitude,status)")
         .eq("is_sold_out", false)
         .gt("quantity", 0)
         .order("created_at", { ascending: false });
       type Row = Product & { vendor: (Product["vendor"] & { status: string }) | null };
       const rows = ((data ?? []) as unknown as Row[]).filter((p) => {
+        if (p.is_farm_product) return true;
         const v = p.vendor;
         if (!v || v.status !== "active") return false;
         if (v.latitude == null || v.longitude == null) return false;
@@ -224,7 +226,13 @@ function Home() {
                 </Link>
                 <div className="p-2.5 flex flex-col gap-0.5 flex-1">
                   <div className="text-sm font-semibold line-clamp-1">{p.name}</div>
-                  <div className="text-[11px] text-muted-foreground truncate">{p.vendor?.name}</div>
+                  <div className="text-[11px] text-muted-foreground truncate flex items-center gap-1">
+                    {p.is_farm_product ? (
+                      <span className="inline-flex items-center gap-0.5 text-primary font-semibold"><Leaf className="w-3 h-3" />From the Farm</span>
+                    ) : (
+                      p.vendor?.name
+                    )}
+                  </div>
                   <div className="mt-1 flex items-center justify-between gap-1">
                     <div className="text-base font-black text-primary">{formatPrice(Number(p.price))}</div>
                     <button onClick={() => handleAdd(p)} className="w-8 h-8 rounded-full bg-primary text-primary-foreground grid place-items-center">
