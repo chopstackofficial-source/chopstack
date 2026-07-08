@@ -94,22 +94,27 @@ export const Route = createFileRoute("/api/public/hooks/paystack-webhook")({
             }
 
             // Notifications
-            const notes = orders.flatMap((o) => [
-              {
-                user_id: o.buyer_id,
-                user_type: "buyer" as const,
-                title: `Order ${o.order_number} confirmed`,
-                body: "Payment received. Vendor is preparing your order.",
-                deeplink: `/orders/${o.id}`,
-              },
-              {
-                user_id: o.vendor_id,
-                user_type: "vendor" as const,
-                title: `New paid order ${o.order_number}`,
-                body: "Check your vendor dashboard.",
-                deeplink: `/vendor`,
-              },
-            ]);
+            const notes = orders.flatMap((o) => {
+              const rows: { user_id: string; user_type: string; title: string; body: string; deeplink: string }[] = [
+                {
+                  user_id: o.buyer_id,
+                  user_type: "buyer",
+                  title: `Order ${o.order_number} confirmed`,
+                  body: "Payment received. Vendor is preparing your order.",
+                  deeplink: `/orders/${o.id}`,
+                },
+              ];
+              if (o.vendor_id) {
+                rows.push({
+                  user_id: o.vendor_id,
+                  user_type: "vendor",
+                  title: `New paid order ${o.order_number}`,
+                  body: "Check your vendor dashboard.",
+                  deeplink: `/vendor`,
+                });
+              }
+              return rows;
+            });
             if (notes.length) await supabaseAdmin.from("notifications").insert(notes);
           }
         }
