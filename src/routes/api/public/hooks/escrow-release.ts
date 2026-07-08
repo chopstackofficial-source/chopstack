@@ -35,15 +35,13 @@ export const Route = createFileRoute("/api/public/hooks/escrow-release")({
             .select("id");
           if (uErr || !data?.length) continue;
           released += 1;
-          if (o.vendor_id) {
-            await supabaseAdmin.from("notifications").insert({
-              user_id: o.vendor_id,
-              user_type: "vendor",
-              title: `Escrow released for ${o.order_number}`,
-              body: "Funds released to your account.",
-              deeplink: "/vendor",
-            });
-          }
+          await supabaseAdmin.from("notifications").insert({
+            user_id: o.vendor_id,
+            user_type: "vendor",
+            title: `Escrow released for ${o.order_number}`,
+            body: "Funds released to your account.",
+            deeplink: "/vendor",
+          });
         }
 
         return new Response(JSON.stringify({ released }), {

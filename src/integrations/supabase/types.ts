@@ -271,7 +271,7 @@ export type Database = {
           subtotal: number
           total: number
           updated_at: string
-          vendor_id: string | null
+          vendor_id: string
           zone_id: string | null
         }
         Insert: {
@@ -293,7 +293,7 @@ export type Database = {
           subtotal: number
           total: number
           updated_at?: string
-          vendor_id?: string | null
+          vendor_id: string
           zone_id?: string | null
         }
         Update: {
@@ -315,7 +315,7 @@ export type Database = {
           subtotal?: number
           total?: number
           updated_at?: string
-          vendor_id?: string | null
+          vendor_id?: string
           zone_id?: string | null
         }
         Relationships: [
@@ -398,45 +398,36 @@ export type Database = {
       products: {
         Row: {
           created_at: string
-          description: string | null
-          farm_delivery_fee: number | null
           id: string
-          is_farm_product: boolean
           is_sold_out: boolean
           name: string
           photo_url: string | null
           price: number
           quantity: number
           updated_at: string
-          vendor_id: string | null
+          vendor_id: string
         }
         Insert: {
           created_at?: string
-          description?: string | null
-          farm_delivery_fee?: number | null
           id?: string
-          is_farm_product?: boolean
           is_sold_out?: boolean
           name: string
           photo_url?: string | null
           price: number
           quantity?: number
           updated_at?: string
-          vendor_id?: string | null
+          vendor_id: string
         }
         Update: {
           created_at?: string
-          description?: string | null
-          farm_delivery_fee?: number | null
           id?: string
-          is_farm_product?: boolean
           is_sold_out?: boolean
           name?: string
           photo_url?: string | null
           price?: number
           quantity?: number
           updated_at?: string
-          vendor_id?: string | null
+          vendor_id?: string
         }
         Relationships: [
           {
