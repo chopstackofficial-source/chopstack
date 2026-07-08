@@ -11,8 +11,8 @@ type Props = {
   confirmLabel?: string;
 };
 
-// Lagos as safe default
-const DEFAULT_CENTER: [number, number] = [3.3792, 6.5244];
+// Port Harcourt as safe default (lng, lat)
+const DEFAULT_CENTER: [number, number] = [7.0498, 4.8156];
 
 export function LocationPicker({ initial, onConfirm, confirmLabel = "Confirm location" }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -25,6 +25,8 @@ export function LocationPicker({ initial, onConfirm, confirmLabel = "Confirm loc
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
+    const envToken = (import.meta.env.VITE_MAPBOX_TOKEN as string | undefined) || "";
+    if (envToken) { setToken(envToken); return; }
     getMapboxToken()
       .then((r) => setToken(r.token || ""))
       .catch(() => setToken(""));
@@ -73,17 +75,30 @@ export function LocationPicker({ initial, onConfirm, confirmLabel = "Confirm loc
 
     if (initial) {
       setFromLngLat(initial.lat, initial.lng);
-    } else if (typeof navigator !== "undefined" && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const { latitude, longitude } = pos.coords;
-          map.flyTo({ center: [longitude, latitude], zoom: 15 });
-          marker.setLngLat([longitude, latitude]);
-          setFromLngLat(latitude, longitude);
-        },
-        () => {},
-        { enableHighAccuracy: true, timeout: 8000 },
-      );
+    } else {
+      // Default to Port Harcourt so the map is always usable; try GPS silently.
+      setFromLngLat(DEFAULT_CENTER[1], DEFAULT_CENTER[0]);
+      const tryGps = () => {
+        if (typeof navigator === "undefined" || !navigator.geolocation) return;
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const { latitude, longitude } = pos.coords;
+            map.flyTo({ center: [longitude, latitude], zoom: 15 });
+            marker.setLngLat([longitude, latitude]);
+            setFromLngLat(latitude, longitude);
+          },
+          () => {},
+          { enableHighAccuracy: true, timeout: 8000 },
+        );
+      };
+      if (typeof navigator !== "undefined" && "permissions" in navigator) {
+        navigator.permissions
+          .query({ name: "geolocation" as PermissionName })
+          .then((s) => { if (s.state !== "denied") tryGps(); })
+          .catch(() => tryGps());
+      } else {
+        tryGps();
+      }
     }
 
     return () => {
