@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatPrice } from "@/lib/format";
 import { toast } from "sonner";
-import { Trash2 } from "lucide-react";
+import { Trash2, Plus, Leaf, X } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({ component: Admin });
 
@@ -14,27 +14,33 @@ type Tier = { id: string; min_km: number; max_km: number; delivery_fee: number; 
 type Vendor = { id: string; name: string; email: string; phone: string; status: string; bank_name: string | null; account_number: string | null; account_name: string | null };
 type Order = { id: string; order_number: string; total: number; delivery_status: string; escrow_status: string; created_at: string; vendor: { name: string } | null; buyer: { name: string } | null };
 type Dispute = { id: string; reason: string; status: string; created_at: string; order: { id: string; order_number: string; total: number } | null; buyer: { name: string; phone: string | null } | null };
+type Farm = { id: string; name: string; price: number; quantity: number; is_sold_out: boolean; photo_url: string | null; description: string | null; farm_delivery_fee: number | null };
 
 function Admin() {
   const { user, role, loading } = useAuth();
-  const [tab, setTab] = useState<"delivery" | "vendors" | "orders" | "disputes">("delivery");
+  const [tab, setTab] = useState<"delivery" | "vendors" | "farm" | "orders" | "disputes">("delivery");
   const [tiers, setTiers] = useState<Tier[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [disputes, setDisputes] = useState<Dispute[]>([]);
+  const [farms, setFarms] = useState<Farm[]>([]);
+  const [farmForm, setFarmForm] = useState<Farm | null>(null);
+  const [showFarmForm, setShowFarmForm] = useState(false);
   const [newTier, setNewTier] = useState({ min_km: "", max_km: "", fee: "" });
 
   const load = useCallback(async () => {
-    const [t, v, o, d] = await Promise.all([
+    const [t, v, o, d, f] = await Promise.all([
       supabase.from("delivery_tiers").select("*").order("sort_order"),
       supabase.from("vendors").select("id,name,email,phone,status,bank_name,account_number,account_name").order("created_at", { ascending: false }),
       supabase.from("orders").select("id,order_number,total,delivery_status,escrow_status,created_at,vendor:vendors(name),buyer:buyers(name)").order("created_at", { ascending: false }).limit(100),
       supabase.from("disputes").select("id,reason,status,created_at,order:orders(id,order_number,total),buyer:buyers(name,phone)").eq("status", "open").order("created_at", { ascending: false }),
+      supabase.from("products").select("id,name,price,quantity,is_sold_out,photo_url,description,farm_delivery_fee").eq("is_farm_product", true).order("created_at", { ascending: false }),
     ]);
     setTiers(((t.data ?? []) as unknown as Tier[]).map((x) => ({ ...x, min_km: Number(x.min_km), max_km: Number(x.max_km), delivery_fee: Number(x.delivery_fee) })));
     setVendors((v.data ?? []) as Vendor[]);
     setOrders((o.data ?? []) as unknown as Order[]);
     setDisputes((d.data ?? []) as unknown as Dispute[]);
+    setFarms((f.data ?? []) as unknown as Farm[]);
   }, []);
   useEffect(() => { if (role === "admin") load(); }, [role, load]);
 
