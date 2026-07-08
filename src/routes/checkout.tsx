@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { initPaystackCheckout } from "@/lib/paystack.functions";
 
-type Row = { id: string; name: string; price: number; vendor_id: string; quantity: number; vendor: { latitude: number | null; longitude: number | null } | null };
+type Row = { id: string; name: string; price: number; vendor_id: string | null; quantity: number; is_farm_product: boolean; farm_delivery_fee: number | null; vendor: { latitude: number | null; longitude: number | null } | null };
 
 export const Route = createFileRoute("/checkout")({ component: Checkout });
 
@@ -30,7 +30,7 @@ function Checkout() {
     (async () => {
       const { data: t } = await supabase.from("delivery_tiers").select("id,min_km,max_km,delivery_fee").order("sort_order");
       setTiers(((t ?? []) as unknown as Tier[]).map((x) => ({ ...x, min_km: Number(x.min_km), max_km: Number(x.max_km), delivery_fee: Number(x.delivery_fee) })));
-      const { data } = await supabase.from("products").select("id,name,price,vendor_id,quantity,vendor:vendors(latitude,longitude)").in("id", lines.map((l) => l.productId));
+      const { data } = await supabase.from("products").select("id,name,price,vendor_id,quantity,is_farm_product,farm_delivery_fee,vendor:vendors(latitude,longitude)").in("id", lines.map((l) => l.productId));
       setRows((data ?? []).map((r) => ({ ...r, qty: lines.find((l) => l.productId === r.id)?.qty ?? 0 })) as unknown as Row[]);
     })();
   }, [nav, location]);
@@ -42,10 +42,12 @@ function Checkout() {
   const maxKm = maxRadiusKm(tiers);
   const vendorFees = new Map<string, number>();
   let outOfRange = false;
-  if (location && tiers.length) {
+  const nonFarm = items.filter((r) => !r.is_farm_product);
+  const hasNonFarm = nonFarm.length > 0;
+  if (hasNonFarm && location && tiers.length) {
     const seen = new Set<string>();
-    for (const r of items) {
-      if (seen.has(r.vendor_id)) continue;
+    for (const r of nonFarm) {
+      if (!r.vendor_id || seen.has(r.vendor_id)) continue;
       seen.add(r.vendor_id);
       const v = r.vendor;
       if (!v || v.latitude == null || v.longitude == null) { outOfRange = true; break; }
@@ -56,12 +58,13 @@ function Checkout() {
       vendorFees.set(r.vendor_id, tier.delivery_fee);
     }
   }
-  const deliveryFee = Array.from(vendorFees.values()).reduce((a, b) => a + b, 0);
+  const farmFee = items.reduce((s, r) => r.is_farm_product ? s + Number(r.farm_delivery_fee ?? 0) * r.qty : s, 0);
+  const deliveryFee = Array.from(vendorFees.values()).reduce((a, b) => a + b, 0) + farmFee;
   const total = subtotal + deliveryFee;
 
   const placeOrder = async () => {
     if (!user) return;
-    if (!location) return toast.error("Set your delivery location first");
+    if (hasNonFarm && !location) return toast.error("Set your delivery location first");
     if (outOfRange) return toast.error("Some vendors are outside our delivery range");
     if (items.length === 0) return toast.error("Cart is empty");
     setBusy(true);
@@ -69,9 +72,9 @@ function Checkout() {
       const callbackUrl = `${window.location.origin}/checkout/callback`;
       const res = await initPaystackCheckout({
         data: {
-          lat: location.lat,
-          lng: location.lng,
-          address: location.address,
+          lat: location?.lat ?? 0,
+          lng: location?.lng ?? 0,
+          address: location?.address ?? "Farm delivery",
           callbackUrl,
           items: items.map((r) => ({ productId: r.id, qty: r.qty })),
         },
@@ -123,7 +126,7 @@ function Checkout() {
         </div>
         {outOfRange && <p className="text-sm text-destructive">We don't deliver to this area yet.</p>}
         <p className="text-xs text-muted-foreground">Payment via Paystack. Funds are held in escrow and released after delivery.</p>
-        <Button size="lg" className="w-full" disabled={busy || outOfRange || !location} onClick={placeOrder}>{busy ? "Placing order…" : `Pay ${formatPrice(total)}`}</Button>
+        <Button size="lg" className="w-full" disabled={busy || outOfRange || (hasNonFarm && !location)} onClick={placeOrder}>{busy ? "Placing order…" : `Pay ${formatPrice(total)}`}</Button>
       </main>
     </MobileShell>
   );
