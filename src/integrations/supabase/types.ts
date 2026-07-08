@@ -271,7 +271,7 @@ export type Database = {
           subtotal: number
           total: number
           updated_at: string
-          vendor_id: string
+          vendor_id: string | null
           zone_id: string | null
         }
         Insert: {
@@ -293,7 +293,7 @@ export type Database = {
           subtotal: number
           total: number
           updated_at?: string
-          vendor_id: string
+          vendor_id?: string | null
           zone_id?: string | null
         }
         Update: {
@@ -315,7 +315,7 @@ export type Database = {
           subtotal?: number
           total?: number
           updated_at?: string
-          vendor_id?: string
+          vendor_id?: string | null
           zone_id?: string | null
         }
         Relationships: [
