@@ -55,35 +55,42 @@ export const initPaystackCheckout = createServerFn({ method: "POST" })
     const productIds = data.items.map((i) => i.productId);
     const { data: products, error: pErr } = await supabase
       .from("products")
-      .select("id,name,price,quantity,vendor_id,is_sold_out,vendor:vendors(id,paystack_subaccount_code,status,latitude,longitude)")
+      .select("id,name,price,quantity,vendor_id,is_sold_out,is_farm_product,farm_delivery_fee,vendor:vendors(id,paystack_subaccount_code,status,latitude,longitude)")
       .in("id", productIds);
     if (pErr) throw new Error(pErr.message);
     if (!products || products.length !== productIds.length) throw new Error("Some items are no longer available");
 
     // Validate stock + build vendor groups
-    type Row = { productId: string; name: string; price: number; qty: number; vendorId: string; subaccount: string | null; vlat: number | null; vlng: number | null };
+    type Row = { productId: string; name: string; price: number; qty: number; vendorId: string | null; subaccount: string | null; vlat: number | null; vlng: number | null; isFarm: boolean; farmFee: number };
     const rows: Row[] = [];
     for (const item of data.items) {
-      const p = products.find((x) => x.id === item.productId);
+      const p = products.find((x) => x.id === item.productId) as (typeof products[number] & { is_farm_product?: boolean; farm_delivery_fee?: number | null }) | undefined;
       if (!p) throw new Error("Item unavailable");
       if (p.is_sold_out || p.quantity < item.qty) throw new Error(`${p.name} is out of stock`);
+      const isFarm = !!p.is_farm_product;
+      if (isFarm) {
+        rows.push({
+          productId: p.id, name: p.name, price: Number(p.price), qty: item.qty,
+          vendorId: null, subaccount: null, vlat: null, vlng: null,
+          isFarm: true, farmFee: Number(p.farm_delivery_fee ?? 0),
+        });
+        continue;
+      }
       const v = p.vendor as { id: string; paystack_subaccount_code: string | null; status: string; latitude: number | null; longitude: number | null } | null;
       if (!v || v.status !== "active") throw new Error(`${p.name} vendor is not active`);
       if (v.latitude == null || v.longitude == null) throw new Error(`${p.name} vendor location missing`);
       rows.push({
-        productId: p.id,
-        name: p.name,
-        price: Number(p.price),
-        qty: item.qty,
-        vendorId: v.id,
-        subaccount: v.paystack_subaccount_code,
-        vlat: v.latitude,
-        vlng: v.longitude,
+        productId: p.id, name: p.name, price: Number(p.price), qty: item.qty,
+        vendorId: v.id, subaccount: v.paystack_subaccount_code,
+        vlat: v.latitude, vlng: v.longitude, isFarm: false, farmFee: 0,
       });
     }
 
-    const grouped = rows.reduce<Record<string, Row[]>>((a, r) => {
-      (a[r.vendorId] ||= []).push(r);
+    const vendorRows = rows.filter((r) => !r.isFarm);
+    const farmRows = rows.filter((r) => r.isFarm);
+    const grouped = vendorRows.reduce<Record<string, Row[]>>((a, r) => {
+      const vid = r.vendorId as string;
+      (a[vid] ||= []).push(r);
       return a;
     }, {});
     const vendorIds = Object.keys(grouped);
@@ -102,7 +109,8 @@ export const initPaystackCheckout = createServerFn({ method: "POST" })
       vendorInfo[vid] = { distance_km: Math.round(km * 100) / 100, fee: tier.delivery_fee };
     }
     const subtotal = rows.reduce((s, r) => s + r.price * r.qty, 0);
-    const deliveryFeeTotal = vendorIds.reduce((s, vid) => s + vendorInfo[vid].fee, 0);
+    const farmDeliveryTotal = farmRows.reduce((s, r) => s + r.farmFee * r.qty, 0);
+    const deliveryFeeTotal = vendorIds.reduce((s, vid) => s + vendorInfo[vid].fee, 0) + farmDeliveryTotal;
     const total = subtotal + deliveryFeeTotal;
 
     // Create one order per vendor, shared payment reference
@@ -134,6 +142,39 @@ export const initPaystackCheckout = createServerFn({ method: "POST" })
         if (error) throw new Error(error.message);
         orderIds.push(order.id);
         const items = group.map((r) => ({
+          order_id: order.id,
+          product_id: r.productId,
+          name_snapshot: r.name,
+          unit_price: r.price,
+          quantity: r.qty,
+        }));
+        const { error: oiErr } = await supabase.from("order_items").insert(items);
+        if (oiErr) throw new Error(oiErr.message);
+      }
+      // One farm order if any farm items
+      if (farmRows.length > 0) {
+        const sub = farmRows.reduce((s, r) => s + r.price * r.qty, 0);
+        const df = farmDeliveryTotal;
+        const { data: order, error } = await supabase
+          .from("orders")
+          .insert({
+            buyer_id: userId,
+            vendor_id: null,
+            subtotal: sub,
+            delivery_fee: df,
+            total: sub + df,
+            delivery_lat: data.lat,
+            delivery_lng: data.lng,
+            payment_status: "unpaid",
+            escrow_status: "none",
+            delivery_status: "confirmed",
+            payment_reference: reference,
+          })
+          .select("id")
+          .single();
+        if (error) throw new Error(error.message);
+        orderIds.push(order.id);
+        const items = farmRows.map((r) => ({
           order_id: order.id,
           product_id: r.productId,
           name_snapshot: r.name,
