@@ -28,13 +28,25 @@ export const initPaystackCheckout = createServerFn({ method: "POST" })
     if (!secret) throw new Error("Paystack not configured");
     const { supabase, userId } = context;
 
-    // Load buyer profile (for email)
-    const { data: buyer, error: buyerErr } = await supabase
+    // Load buyer profile (for email); create it on the fly if missing
+    let { data: buyer } = await supabase
       .from("buyers")
       .select("email,name")
       .eq("id", userId)
       .maybeSingle();
-    if (buyerErr || !buyer) throw new Error("Complete your buyer profile first");
+    if (!buyer) {
+      const claims = context.claims as { email?: string; user_metadata?: { name?: string; full_name?: string } };
+      const email = claims?.email;
+      if (!email) throw new Error("We couldn't read your account email. Please sign in again.");
+      const name = claims?.user_metadata?.name || claims?.user_metadata?.full_name || email.split("@")[0];
+      const { data: created, error: createErr } = await supabase
+        .from("buyers")
+        .insert({ id: userId, email, name, delivery_address: data.address, latitude: data.lat, longitude: data.lng })
+        .select("email,name")
+        .single();
+      if (createErr || !created) throw new Error("Could not set up your profile. Try again.");
+      buyer = created;
+    }
 
     // Load delivery tiers
     const { data: tiersRaw, error: tErr } = await supabase

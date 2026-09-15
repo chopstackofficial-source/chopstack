@@ -35,6 +35,7 @@ export const Route = createFileRoute("/api/public/hooks/escrow-release")({
             .select("id");
           if (uErr || !data?.length) continue;
           released += 1;
+          if (!o.vendor_id) continue;
           await supabaseAdmin.from("notifications").insert({
             user_id: o.vendor_id,
             user_type: "vendor",
