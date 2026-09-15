@@ -103,7 +103,7 @@ export const Route = createFileRoute("/api/public/hooks/paystack-webhook")({
                 deeplink: `/orders/${o.id}`,
               },
               {
-                user_id: o.vendor_id,
+                user_id: o.vendor_id as string,
                 user_type: "vendor" as const,
                 title: `New paid order ${o.order_number}`,
                 body: "Check your vendor dashboard.",
