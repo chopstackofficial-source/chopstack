@@ -6,13 +6,10 @@ import {
   useRouter,
   HeadContent,
   Scripts,
-  ScriptOnce,
 } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
-import { AuthProvider } from "@/lib/auth";
-import { ThemeProvider } from "@/lib/theme";
-import { Toaster } from "@/components/ui/sonner";
+import { Header, Footer } from "@/components/site/Chrome";
 
 function NotFoundComponent() {
   return (
@@ -77,23 +74,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "CHOPSTACK" },
-      { name: "description", content: "Fresh farm produce, kitchen bundles, and split orders — direct from farmers." },
-      { property: "og:title", content: "CHOPSTACK" },
-      { property: "og:description", content: "Fresh farm produce, kitchen bundles, and split orders — direct from farmers." },
+      { name: "description", content: "CHOPSTACK — Noodles · Plantain · Protein. A modern Nigerian food brand." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
-      { name: "twitter:title", content: "CHOPSTACK" },
-      { name: "twitter:description", content: "Fresh farm produce, kitchen bundles, and split orders — direct from farmers." },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/14V5jhCrWhS5xh1mDtWOv2pcLjK2/social-images/social-1779389757425-20260513_024914-removebg-preview.webp" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/14V5jhCrWhS5xh1mDtWOv2pcLjK2/social-images/social-1779389757425-20260513_024914-removebg-preview.webp" },
     ],
     links: [
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
+      { rel: "stylesheet", href: appCss },
       { rel: "icon", type: "image/png", href: "/favicon.png" },
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Anton&family=Manrope:wght@400;500;600;700&display=swap" },
     ],
   }),
   shellComponent: RootShell,
@@ -104,12 +94,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className="dark">
       <head>
         <HeadContent />
       </head>
       <body>
-        <ScriptOnce>{`(function(){try{var t=localStorage.getItem('cs_theme')||'dark';if(t==='dark')document.documentElement.classList.add('dark');}catch(e){document.documentElement.classList.add('dark');}})();`}</ScriptOnce>
         {children}
         <Scripts />
       </body>
@@ -122,12 +111,11 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <AuthProvider>
-          <Outlet />
-          <Toaster position="top-center" />
-        </AuthProvider>
-      </ThemeProvider>
+      <Header />
+      <main>
+        <Outlet />
+      </main>
+      <Footer />
     </QueryClientProvider>
   );
 }

@@ -9,56 +9,24 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as VendorRouteImport } from './routes/vendor'
-import { Route as SignupRouteImport } from './routes/signup'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as CheckoutRouteImport } from './routes/checkout'
-import { Route as CartRouteImport } from './routes/cart'
-import { Route as AdminRouteImport } from './routes/admin'
-import { Route as AccountRouteImport } from './routes/account'
+import { Route as VisitRouteImport } from './routes/visit'
+import { Route as StoryRouteImport } from './routes/story'
+import { Route as MenuRouteImport } from './routes/menu'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as OrdersIndexRouteImport } from './routes/orders.index'
-import { Route as VendorSignupRouteImport } from './routes/vendor.signup'
-import { Route as VendorIdRouteImport } from './routes/vendor.$id'
-import { Route as ProductIdRouteImport } from './routes/product.$id'
-import { Route as OrdersIdRouteImport } from './routes/orders.$id'
-import { Route as CheckoutCallbackRouteImport } from './routes/checkout.callback'
-import { Route as ApiPublicHooksPaystackWebhookRouteImport } from './routes/api/public/hooks/paystack-webhook'
-import { Route as ApiPublicHooksEscrowReleaseRouteImport } from './routes/api/public/hooks/escrow-release'
 
-const VendorRoute = VendorRouteImport.update({
-  id: '/vendor',
-  path: '/vendor',
+const VisitRoute = VisitRouteImport.update({
+  id: '/visit',
+  path: '/visit',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SignupRoute = SignupRouteImport.update({
-  id: '/signup',
-  path: '/signup',
+const StoryRoute = StoryRouteImport.update({
+  id: '/story',
+  path: '/story',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CheckoutRoute = CheckoutRouteImport.update({
-  id: '/checkout',
-  path: '/checkout',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CartRoute = CartRouteImport.update({
-  id: '/cart',
-  path: '/cart',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminRoute = AdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AccountRoute = AccountRouteImport.update({
-  id: '/account',
-  path: '/account',
+const MenuRoute = MenuRouteImport.update({
+  id: '/menu',
+  path: '/menu',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -66,226 +34,62 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const OrdersIndexRoute = OrdersIndexRouteImport.update({
-  id: '/orders/',
-  path: '/orders/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const VendorSignupRoute = VendorSignupRouteImport.update({
-  id: '/signup',
-  path: '/signup',
-  getParentRoute: () => VendorRoute,
-} as any)
-const VendorIdRoute = VendorIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => VendorRoute,
-} as any)
-const ProductIdRoute = ProductIdRouteImport.update({
-  id: '/product/$id',
-  path: '/product/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OrdersIdRoute = OrdersIdRouteImport.update({
-  id: '/orders/$id',
-  path: '/orders/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CheckoutCallbackRoute = CheckoutCallbackRouteImport.update({
-  id: '/callback',
-  path: '/callback',
-  getParentRoute: () => CheckoutRoute,
-} as any)
-const ApiPublicHooksPaystackWebhookRoute =
-  ApiPublicHooksPaystackWebhookRouteImport.update({
-    id: '/api/public/hooks/paystack-webhook',
-    path: '/api/public/hooks/paystack-webhook',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksEscrowReleaseRoute =
-  ApiPublicHooksEscrowReleaseRouteImport.update({
-    id: '/api/public/hooks/escrow-release',
-    path: '/api/public/hooks/escrow-release',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/account': typeof AccountRoute
-  '/admin': typeof AdminRoute
-  '/cart': typeof CartRoute
-  '/checkout': typeof CheckoutRouteWithChildren
-  '/login': typeof LoginRoute
-  '/signup': typeof SignupRoute
-  '/vendor': typeof VendorRouteWithChildren
-  '/checkout/callback': typeof CheckoutCallbackRoute
-  '/orders/$id': typeof OrdersIdRoute
-  '/product/$id': typeof ProductIdRoute
-  '/vendor/$id': typeof VendorIdRoute
-  '/vendor/signup': typeof VendorSignupRoute
-  '/orders/': typeof OrdersIndexRoute
-  '/api/public/hooks/escrow-release': typeof ApiPublicHooksEscrowReleaseRoute
-  '/api/public/hooks/paystack-webhook': typeof ApiPublicHooksPaystackWebhookRoute
+  '/menu': typeof MenuRoute
+  '/story': typeof StoryRoute
+  '/visit': typeof VisitRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/account': typeof AccountRoute
-  '/admin': typeof AdminRoute
-  '/cart': typeof CartRoute
-  '/checkout': typeof CheckoutRouteWithChildren
-  '/login': typeof LoginRoute
-  '/signup': typeof SignupRoute
-  '/vendor': typeof VendorRouteWithChildren
-  '/checkout/callback': typeof CheckoutCallbackRoute
-  '/orders/$id': typeof OrdersIdRoute
-  '/product/$id': typeof ProductIdRoute
-  '/vendor/$id': typeof VendorIdRoute
-  '/vendor/signup': typeof VendorSignupRoute
-  '/orders': typeof OrdersIndexRoute
-  '/api/public/hooks/escrow-release': typeof ApiPublicHooksEscrowReleaseRoute
-  '/api/public/hooks/paystack-webhook': typeof ApiPublicHooksPaystackWebhookRoute
+  '/menu': typeof MenuRoute
+  '/story': typeof StoryRoute
+  '/visit': typeof VisitRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/account': typeof AccountRoute
-  '/admin': typeof AdminRoute
-  '/cart': typeof CartRoute
-  '/checkout': typeof CheckoutRouteWithChildren
-  '/login': typeof LoginRoute
-  '/signup': typeof SignupRoute
-  '/vendor': typeof VendorRouteWithChildren
-  '/checkout/callback': typeof CheckoutCallbackRoute
-  '/orders/$id': typeof OrdersIdRoute
-  '/product/$id': typeof ProductIdRoute
-  '/vendor/$id': typeof VendorIdRoute
-  '/vendor/signup': typeof VendorSignupRoute
-  '/orders/': typeof OrdersIndexRoute
-  '/api/public/hooks/escrow-release': typeof ApiPublicHooksEscrowReleaseRoute
-  '/api/public/hooks/paystack-webhook': typeof ApiPublicHooksPaystackWebhookRoute
+  '/menu': typeof MenuRoute
+  '/story': typeof StoryRoute
+  '/visit': typeof VisitRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/account'
-    | '/admin'
-    | '/cart'
-    | '/checkout'
-    | '/login'
-    | '/signup'
-    | '/vendor'
-    | '/checkout/callback'
-    | '/orders/$id'
-    | '/product/$id'
-    | '/vendor/$id'
-    | '/vendor/signup'
-    | '/orders/'
-    | '/api/public/hooks/escrow-release'
-    | '/api/public/hooks/paystack-webhook'
+  fullPaths: '/' | '/menu' | '/story' | '/visit'
   fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | '/account'
-    | '/admin'
-    | '/cart'
-    | '/checkout'
-    | '/login'
-    | '/signup'
-    | '/vendor'
-    | '/checkout/callback'
-    | '/orders/$id'
-    | '/product/$id'
-    | '/vendor/$id'
-    | '/vendor/signup'
-    | '/orders'
-    | '/api/public/hooks/escrow-release'
-    | '/api/public/hooks/paystack-webhook'
-  id:
-    | '__root__'
-    | '/'
-    | '/account'
-    | '/admin'
-    | '/cart'
-    | '/checkout'
-    | '/login'
-    | '/signup'
-    | '/vendor'
-    | '/checkout/callback'
-    | '/orders/$id'
-    | '/product/$id'
-    | '/vendor/$id'
-    | '/vendor/signup'
-    | '/orders/'
-    | '/api/public/hooks/escrow-release'
-    | '/api/public/hooks/paystack-webhook'
+  to: '/' | '/menu' | '/story' | '/visit'
+  id: '__root__' | '/' | '/menu' | '/story' | '/visit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AccountRoute: typeof AccountRoute
-  AdminRoute: typeof AdminRoute
-  CartRoute: typeof CartRoute
-  CheckoutRoute: typeof CheckoutRouteWithChildren
-  LoginRoute: typeof LoginRoute
-  SignupRoute: typeof SignupRoute
-  VendorRoute: typeof VendorRouteWithChildren
-  OrdersIdRoute: typeof OrdersIdRoute
-  ProductIdRoute: typeof ProductIdRoute
-  OrdersIndexRoute: typeof OrdersIndexRoute
-  ApiPublicHooksEscrowReleaseRoute: typeof ApiPublicHooksEscrowReleaseRoute
-  ApiPublicHooksPaystackWebhookRoute: typeof ApiPublicHooksPaystackWebhookRoute
+  MenuRoute: typeof MenuRoute
+  StoryRoute: typeof StoryRoute
+  VisitRoute: typeof VisitRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/vendor': {
-      id: '/vendor'
-      path: '/vendor'
-      fullPath: '/vendor'
-      preLoaderRoute: typeof VendorRouteImport
+    '/visit': {
+      id: '/visit'
+      path: '/visit'
+      fullPath: '/visit'
+      preLoaderRoute: typeof VisitRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/signup': {
-      id: '/signup'
-      path: '/signup'
-      fullPath: '/signup'
-      preLoaderRoute: typeof SignupRouteImport
+    '/story': {
+      id: '/story'
+      path: '/story'
+      fullPath: '/story'
+      preLoaderRoute: typeof StoryRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/checkout': {
-      id: '/checkout'
-      path: '/checkout'
-      fullPath: '/checkout'
-      preLoaderRoute: typeof CheckoutRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/cart': {
-      id: '/cart'
-      path: '/cart'
-      fullPath: '/cart'
-      preLoaderRoute: typeof CartRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin': {
-      id: '/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AdminRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/account': {
-      id: '/account'
-      path: '/account'
-      fullPath: '/account'
-      preLoaderRoute: typeof AccountRouteImport
+    '/menu': {
+      id: '/menu'
+      path: '/menu'
+      fullPath: '/menu'
+      preLoaderRoute: typeof MenuRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -295,104 +99,14 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/orders/': {
-      id: '/orders/'
-      path: '/orders'
-      fullPath: '/orders/'
-      preLoaderRoute: typeof OrdersIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/vendor/signup': {
-      id: '/vendor/signup'
-      path: '/signup'
-      fullPath: '/vendor/signup'
-      preLoaderRoute: typeof VendorSignupRouteImport
-      parentRoute: typeof VendorRoute
-    }
-    '/vendor/$id': {
-      id: '/vendor/$id'
-      path: '/$id'
-      fullPath: '/vendor/$id'
-      preLoaderRoute: typeof VendorIdRouteImport
-      parentRoute: typeof VendorRoute
-    }
-    '/product/$id': {
-      id: '/product/$id'
-      path: '/product/$id'
-      fullPath: '/product/$id'
-      preLoaderRoute: typeof ProductIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/orders/$id': {
-      id: '/orders/$id'
-      path: '/orders/$id'
-      fullPath: '/orders/$id'
-      preLoaderRoute: typeof OrdersIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/checkout/callback': {
-      id: '/checkout/callback'
-      path: '/callback'
-      fullPath: '/checkout/callback'
-      preLoaderRoute: typeof CheckoutCallbackRouteImport
-      parentRoute: typeof CheckoutRoute
-    }
-    '/api/public/hooks/paystack-webhook': {
-      id: '/api/public/hooks/paystack-webhook'
-      path: '/api/public/hooks/paystack-webhook'
-      fullPath: '/api/public/hooks/paystack-webhook'
-      preLoaderRoute: typeof ApiPublicHooksPaystackWebhookRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/escrow-release': {
-      id: '/api/public/hooks/escrow-release'
-      path: '/api/public/hooks/escrow-release'
-      fullPath: '/api/public/hooks/escrow-release'
-      preLoaderRoute: typeof ApiPublicHooksEscrowReleaseRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
-interface CheckoutRouteChildren {
-  CheckoutCallbackRoute: typeof CheckoutCallbackRoute
-}
-
-const CheckoutRouteChildren: CheckoutRouteChildren = {
-  CheckoutCallbackRoute: CheckoutCallbackRoute,
-}
-
-const CheckoutRouteWithChildren = CheckoutRoute._addFileChildren(
-  CheckoutRouteChildren,
-)
-
-interface VendorRouteChildren {
-  VendorIdRoute: typeof VendorIdRoute
-  VendorSignupRoute: typeof VendorSignupRoute
-}
-
-const VendorRouteChildren: VendorRouteChildren = {
-  VendorIdRoute: VendorIdRoute,
-  VendorSignupRoute: VendorSignupRoute,
-}
-
-const VendorRouteWithChildren =
-  VendorRoute._addFileChildren(VendorRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AccountRoute: AccountRoute,
-  AdminRoute: AdminRoute,
-  CartRoute: CartRoute,
-  CheckoutRoute: CheckoutRouteWithChildren,
-  LoginRoute: LoginRoute,
-  SignupRoute: SignupRoute,
-  VendorRoute: VendorRouteWithChildren,
-  OrdersIdRoute: OrdersIdRoute,
-  ProductIdRoute: ProductIdRoute,
-  OrdersIndexRoute: OrdersIndexRoute,
-  ApiPublicHooksEscrowReleaseRoute: ApiPublicHooksEscrowReleaseRoute,
-  ApiPublicHooksPaystackWebhookRoute: ApiPublicHooksPaystackWebhookRoute,
+  MenuRoute: MenuRoute,
+  StoryRoute: StoryRoute,
+  VisitRoute: VisitRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
