@@ -27,7 +27,7 @@ function StoryPage() {
     <div className="pt-28 md:pt-36">
       <div className="mx-auto max-w-7xl px-5 md:px-8">
         <div className="text-xs uppercase tracking-[0.35em] text-primary mb-4">Story</div>
-        <h1 className="font-display uppercase text-6xl md:text-9xl leading-[0.85] max-w-5xl">One plate. No shortcuts.</h1>
+        <h1 className="font-display uppercase text-4xl md:text-8xl leading-[0.9] max-w-5xl">One plate. No shortcuts.</h1>
         <p className="mt-10 text-xl md:text-2xl text-muted-foreground max-w-2xl">CHOPSTACK started with a simple idea: take the combination everybody loves — noodles, dodo and something grilled — and make it the best version you've ever had.</p>
       </div>
       <div className="mx-auto max-w-7xl px-5 md:px-8 mt-16 grid md:grid-cols-2 gap-5">

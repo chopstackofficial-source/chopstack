@@ -50,7 +50,7 @@ function Home() {
       </section>
 
       <section className="mx-auto max-w-7xl px-5 md:px-8 py-24 md:py-36">
-        <p className="font-display uppercase text-5xl md:text-8xl leading-[0.9] max-w-5xl">
+        <p className="font-display uppercase text-4xl md:text-7xl leading-[0.9] max-w-5xl">
           Three things. <span className="text-primary">Done right.</span> Every single time.
         </p>
       </section>
@@ -62,7 +62,7 @@ function Home() {
             <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/10 to-transparent" />
             <div className="absolute inset-x-0 bottom-0 p-7">
               <div className="text-primary text-sm font-semibold tracking-[0.3em]">{t.n}</div>
-              <h3 className="font-display uppercase text-6xl mt-1">{t.name}</h3>
+              <h3 className="font-display uppercase text-4xl md:text-5xl mt-1">{t.name}</h3>
               <p className="text-muted-foreground mt-2 max-w-[22ch]">{t.copy}</p>
             </div>
           </article>
@@ -83,7 +83,7 @@ function Home() {
       <section className="mx-auto max-w-7xl px-5 md:px-8 grid md:grid-cols-2 gap-12 items-center">
         <div>
           <div className="text-xs uppercase tracking-[0.35em] text-primary mb-5">The story</div>
-          <h2 className="font-display uppercase text-5xl md:text-7xl leading-[0.9]">Born in Nigeria. Built for everywhere.</h2>
+          <h2 className="font-display uppercase text-3xl md:text-6xl leading-[0.95]">Born in Nigeria. Built for everywhere.</h2>
           <p className="mt-6 text-lg text-muted-foreground max-w-md">Street-food energy, kitchen discipline. We started with the plate we crave most and refused to overcomplicate it.</p>
           <Link to="/story" className="mt-8 inline-flex items-center gap-2 font-semibold uppercase tracking-wider text-sm border-b-2 border-primary pb-1 hover:gap-4 transition-all">Read more <ArrowRight className="h-4 w-4" /></Link>
         </div>
@@ -94,7 +94,7 @@ function Home() {
 
       <section className="mx-auto max-w-7xl px-5 md:px-8 mt-24 md:mt-36">
         <div className="rounded-3xl bg-primary text-primary-foreground p-10 md:p-16 flex flex-col md:flex-row md:items-end justify-between gap-8">
-          <h2 className="font-display uppercase text-6xl md:text-8xl leading-[0.85]">Come<br/>hungry.</h2>
+          <h2 className="font-display uppercase text-4xl md:text-7xl leading-[0.9]">Come<br/>hungry.</h2>
           <div className="flex flex-wrap gap-3">
             <Link to="/visit" className="rounded-full bg-background text-foreground px-6 py-3 font-semibold uppercase tracking-wider text-sm">Find us</Link>
             <a href="https://instagram.com" target="_blank" rel="noreferrer" className="rounded-full border-2 border-primary-foreground px-6 py-3 font-semibold uppercase tracking-wider text-sm">Follow</a>
