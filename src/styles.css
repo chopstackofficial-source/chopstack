@@ -175,6 +175,13 @@
 @utility rise { animation: rise 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
 @utility animate-slow-zoom { animation: slow-zoom 2.4s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
 @utility marquee { display: inline-flex; animation: marquee 22s linear infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .rise, .animate-slow-zoom, .marquee {
+    animation: none !important;
+    opacity: 1 !important;
+  }
+}
 @utility text-outline { color: transparent; -webkit-text-stroke: 1.5px var(--color-foreground); }
 @utility grain {
   &::after {
