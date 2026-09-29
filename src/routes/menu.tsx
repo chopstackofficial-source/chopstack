@@ -5,9 +5,9 @@ export const Route = createFileRoute("/menu")({
   head: () => ({
     meta: [
       { title: "Menu — CHOPSTACK" },
-      { name: "description", content: "The CHOPSTACK menu: stir-fried noodles, fried plantain and grilled protein. Build your stack." },
+      { name: "description", content: "The CHOPSTACK menu: stir-fried noodles, fried plantain and your choice of protein. ₦1,300." },
       { property: "og:title", content: "Menu — CHOPSTACK" },
-      { property: "og:description", content: "Stir-fried noodles, fried plantain and grilled protein." },
+      { property: "og:description", content: "Stir-fried noodles, fried plantain and your choice of protein — ₦1,300." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -16,15 +16,8 @@ export const Route = createFileRoute("/menu")({
 });
 
 const sections = [
-  { title: "Stacks", items: [
-    { name: "The Classic Stack", desc: "Stir-fried noodles, dodo, grilled chicken.", price: "₦6,500" },
-    { name: "Beef Stack", desc: "Stir-fried noodles, dodo, peppered beef.", price: "₦7,000" },
-    { name: "Double Up", desc: "Noodles, double dodo, chicken and beef.", price: "₦9,500" },
-  ]},
-  { title: "On the side", items: [
-    { name: "Extra Dodo", desc: "Ripe plantain, fried golden.", price: "₦1,500" },
-    { name: "Extra Protein", desc: "Chicken or beef.", price: "₦2,500" },
-    { name: "Pepper Sauce", desc: "House-made. Hot.", price: "₦500" },
+  { title: "The Stack", items: [
+    { name: "Noodles + Plantain", desc: "Stir-fried noodles with fried plantain — add whichever protein you like.", price: "₦1,300" },
   ]},
 ];
 
