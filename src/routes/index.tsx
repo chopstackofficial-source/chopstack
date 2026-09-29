@@ -31,12 +31,18 @@ function Home() {
       <section className="relative min-h-[100svh] flex items-end overflow-hidden grain">
         <img src={hero} alt="CHOPSTACK noodles, plantain and chicken bowl" width={1536} height={1024} className="absolute inset-0 h-full w-full object-cover scale-105 animate-slow-zoom" />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
-        <div className="relative mx-auto w-full max-w-7xl px-5 md:px-8 pb-14 md:pb-20">
+        <div className="relative mx-auto w-full max-w-7xl px-5 md:px-8 pb-12 md:pb-16">
           <div className="text-xs md:text-sm uppercase tracking-[0.35em] text-primary mb-4 rise">Lagos · Est. 2026</div>
-          <h1 className="font-display uppercase leading-[0.85] text-[22vw] md:text-[13rem] rise [animation-delay:120ms]">Chop<br/>stack</h1>
-          <div className="mt-6 flex flex-wrap items-center gap-x-8 gap-y-4 rise [animation-delay:240ms]">
-            <p className="text-lg md:text-2xl font-medium">Noodles <span className="text-primary">·</span> Plantain <span className="text-primary">·</span> Protein</p>
-            <Link to="/menu" className="group inline-flex items-center gap-3 rounded-full bg-primary text-primary-foreground px-6 py-3 font-semibold uppercase tracking-wider text-sm">
+          <h1
+            className="font-display font-black uppercase leading-[0.82] tracking-tight text-primary select-none rise [animation-delay:120ms]"
+            style={{ fontSize: "clamp(2.6rem, 14.5vw, 12.5rem)" }}
+          >
+            <span className="block">Chop</span>
+            <span className="block -mt-[0.08em] md:translate-x-[0.04em]">Stack</span>
+          </h1>
+          <div className="mt-7 flex flex-wrap items-end justify-between gap-x-8 gap-y-5 rise [animation-delay:240ms]">
+            <p className="text-base md:text-xl font-medium uppercase tracking-[0.2em]">Noodles <span className="text-primary">·</span> Plantain <span className="text-primary">·</span> Protein</p>
+            <Link to="/menu" className="group inline-flex items-center gap-3 rounded-full bg-primary text-primary-foreground px-6 py-3 font-semibold uppercase tracking-wider text-sm hover:brightness-110 transition">
               See the menu <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Link>
           </div>
