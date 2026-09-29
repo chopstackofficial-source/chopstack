@@ -32,7 +32,7 @@ function VisitPage() {
         </div>
         <div className="border-t border-border pt-6">
           <h2 className="text-sm uppercase tracking-[0.3em] text-muted-foreground">Say hi</h2>
-          <a href="mailto:chopstackofficial@gmail.com" className="font-display text-2xl md:text-3xl uppercase mt-3 block hover:text-primary break-all">chopstackofficial@gmail.com</a>
+          <a href="mailto:chopstackofficial@gmail.com" className="mt-3 block text-sm tracking-wide text-muted-foreground hover:text-primary break-all">chopstackofficial@gmail.com</a>
         </div>
       </div>
     </div>

@@ -54,12 +54,17 @@ export function Footer() {
           {links.map((l) => <Link key={l.to} to={l.to} className="hover:text-foreground">{l.label}</Link>)}
         </div>
         <div className="flex md:justify-end gap-6 text-sm uppercase tracking-[0.2em]">
+          <a href="https://www.facebook.com/chopstack1" target="_blank" rel="noreferrer" className="hover:text-primary">Facebook</a>
           <a href="https://instagram.com" target="_blank" rel="noreferrer" className="hover:text-primary">Instagram</a>
           <a href="https://tiktok.com" target="_blank" rel="noreferrer" className="hover:text-primary">TikTok</a>
           <a href="https://x.com" target="_blank" rel="noreferrer" className="hover:text-primary">X</a>
         </div>
       </div>
-      <div className="mx-auto max-w-7xl px-5 md:px-8 pb-8 text-xs text-muted-foreground">© {new Date().getFullYear()} CHOPSTACK. Made in Nigeria.</div>
+      <div className="mx-auto max-w-7xl px-5 md:px-8 pb-8 text-xs text-muted-foreground">
+        <a href="mailto:chopstackofficial@gmail.com" className="hover:text-foreground break-all">chopstackofficial@gmail.com</a>
+        <span className="mx-2">·</span>
+        © {new Date().getFullYear()} CHOPSTACK. Made in Nigeria.
+      </div>
     </footer>
   );
 }
