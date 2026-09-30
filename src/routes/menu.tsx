@@ -5,9 +5,9 @@ export const Route = createFileRoute("/menu")({
   head: () => ({
     meta: [
       { title: "Menu — CHOPSTACK" },
-      { name: "description", content: "The CHOPSTACK menu: stir-fried noodles, fried plantain and your choice of protein. ₦1,300." },
+      { name: "description", content: "The CHOPSTACK menu: stir-fried noodles or pasta, fried plantain and your choice of protein. ₦1,300." },
       { property: "og:title", content: "Menu — CHOPSTACK" },
-      { property: "og:description", content: "Stir-fried noodles, fried plantain and your choice of protein — ₦1,300." },
+      { property: "og:description", content: "Stir-fried noodles or pasta, fried plantain and your choice of protein — ₦1,300." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -17,7 +17,7 @@ export const Route = createFileRoute("/menu")({
 
 const sections = [
   { title: "The Stack", items: [
-    { name: "Noodles + Plantain", desc: "Stir-fried noodles with fried plantain — add whichever protein you like.", price: "₦1,300" },
+    { name: "Noodles or Pasta + Plantain", desc: "Stir-fried noodles or pasta with fried plantain — add whichever protein you like.", price: "₦1,300" },
   ]},
 ];
 

@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
 import hero from "@/assets/hero-bowl.jpg";
 import noodles from "@/assets/noodles.jpg";
+import pasta from "@/assets/pasta.jpg";
 import plantain from "@/assets/plantain.jpg";
 import protein from "@/assets/protein.jpg";
 import { Reveal } from "@/components/site/Reveal";
@@ -9,10 +10,10 @@ import { Reveal } from "@/components/site/Reveal";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "CHOPSTACK — Noodles · Plantain · Protein" },
-      { name: "description", content: "CHOPSTACK is a modern Nigerian food brand. Stir-fried noodles, fried plantain and protein, done properly." },
-      { property: "og:title", content: "CHOPSTACK — Noodles · Plantain · Protein" },
-      { property: "og:description", content: "A modern Nigerian food brand. Stir-fried noodles, fried plantain and protein." },
+      { title: "CHOPSTACK — Noodles · Pasta · Plantain · Protein" },
+      { name: "description", content: "CHOPSTACK is a modern Nigerian food brand. Stir-fried noodles, pasta, fried plantain and protein, done properly." },
+      { property: "og:title", content: "CHOPSTACK — Noodles · Pasta · Plantain · Protein" },
+      { property: "og:description", content: "A modern Nigerian food brand. Stir-fried noodles, pasta, fried plantain and protein." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -22,8 +23,9 @@ export const Route = createFileRoute("/")({
 
 const trio = [
   { n: "01", name: "Noodles", img: noodles, copy: "Wok-tossed hot. Peppers, onions, heat." },
-  { n: "02", name: "Plantain", img: plantain, copy: "Ripe, sweet, caramelised at the edges." },
-  { n: "03", name: "Protein", img: protein, copy: "Chicken or beef. Spiced, grilled, stacked." },
+  { n: "02", name: "Pasta", img: pasta, copy: "Penne in rich pepper sauce. Bold and saucy." },
+  { n: "03", name: "Plantain", img: plantain, copy: "Ripe, sweet, caramelised at the edges." },
+  { n: "04", name: "Protein", img: protein, copy: "Chicken or beef. Spiced, grilled, stacked." },
 ];
 
 function Home() {
@@ -33,7 +35,6 @@ function Home() {
         <img src={hero} alt="CHOPSTACK noodles, plantain and chicken bowl" width={1536} height={1024} className="absolute inset-0 h-full w-full object-cover scale-105 animate-slow-zoom" />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
         <div className="relative mx-auto w-full max-w-7xl px-5 md:px-8 pb-12 md:pb-16">
-          <div className="text-xs md:text-sm uppercase tracking-[0.35em] text-primary mb-4 rise">Lagos · Est. 2026</div>
           <h1
             className="font-display font-black uppercase leading-[0.82] tracking-tight text-primary select-none rise [animation-delay:120ms]"
             style={{ fontSize: "clamp(2.6rem, 14.5vw, 12.5rem)" }}
@@ -42,7 +43,7 @@ function Home() {
             <span className="block -mt-[0.08em] md:translate-x-[0.04em]">Stack</span>
           </h1>
           <div className="mt-7 flex flex-wrap items-end justify-between gap-x-8 gap-y-5 rise [animation-delay:240ms]">
-            <p className="text-base md:text-xl font-medium uppercase tracking-[0.2em]">Noodles <span className="text-primary">·</span> Plantain <span className="text-primary">·</span> Protein</p>
+            <p className="text-sm md:text-lg font-medium uppercase tracking-[0.2em]">Noodles <span className="text-primary">·</span> Pasta <span className="text-primary">·</span> Plantain <span className="text-primary">·</span> Protein</p>
             <Link to="/menu" className="group inline-flex items-center gap-3 rounded-full bg-primary text-primary-foreground px-6 py-3 font-semibold uppercase tracking-wider text-sm hover:brightness-110 transition">
               See the menu <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Link>
@@ -53,12 +54,12 @@ function Home() {
       <section className="mx-auto max-w-7xl px-5 md:px-8 py-24 md:py-36">
         <Reveal>
           <p className="font-display uppercase text-4xl md:text-7xl leading-[0.9] max-w-5xl">
-            Three things. <span className="text-primary">Done right.</span> Every single time.
+            Four things. <span className="text-primary">Done right.</span> Every single time.
           </p>
         </Reveal>
       </section>
 
-      <section className="mx-auto max-w-7xl px-5 md:px-8 grid gap-5 md:grid-cols-3">
+      <section className="mx-auto max-w-7xl px-5 md:px-8 grid gap-5 sm:grid-cols-2 md:grid-cols-4">
         {trio.map((t, i) => (
           <Reveal key={t.name} delay={i * 130}>
             <article className="group relative overflow-hidden rounded-3xl bg-card aspect-[3/4] hover-scale">
@@ -78,7 +79,7 @@ function Home() {
         <div className="marquee font-display uppercase text-6xl md:text-8xl whitespace-nowrap">
           {Array.from({ length: 2 }).map((_, i) => (
             <span key={i} className="inline-flex gap-10 pr-10">
-              <span>Noodles</span><span className="text-primary">✦</span><span>Plantain</span><span className="text-primary">✦</span><span>Protein</span><span className="text-primary">✦</span>
+              <span>Noodles</span><span className="text-primary">✦</span><span>Pasta</span><span className="text-primary">✦</span><span>Plantain</span><span className="text-primary">✦</span><span>Protein</span><span className="text-primary">✦</span>
               <span className="text-outline">Chopstack</span><span className="text-primary">✦</span>
             </span>
           ))}
