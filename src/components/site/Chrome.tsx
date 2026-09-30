@@ -53,7 +53,7 @@ export function Footer() {
         <div className="flex gap-8 text-sm uppercase tracking-[0.2em] text-muted-foreground">
           {links.map((l) => <Link key={l.to} to={l.to} className="hover:text-foreground">{l.label}</Link>)}
         </div>
-        <div className="flex md:justify-end gap-6 text-sm uppercase tracking-[0.2em]">
+        <div className="flex flex-wrap md:justify-end gap-x-6 gap-y-2 text-sm uppercase tracking-[0.2em]">
           <a href="https://www.facebook.com/chopstack1" target="_blank" rel="noreferrer" className="hover:text-primary">Facebook</a>
           <a href="https://instagram.com" target="_blank" rel="noreferrer" className="hover:text-primary">Instagram</a>
           <a href="https://tiktok.com" target="_blank" rel="noreferrer" className="hover:text-primary">TikTok</a>
