@@ -22,11 +22,19 @@ export const Route = createFileRoute("/")({
 });
 
 const trio = [
-  { n: "01", name: "Noodles", img: noodles, copy: "Wok-tossed hot. Peppers, onions, heat." },
-  { n: "02", name: "Pasta", img: pasta, copy: "Penne in rich pepper sauce. Bold and saucy." },
+  { n: "01", name: "Noodles", img: noodles, copy: "Wok-tossed hot. Peppers, onions, heat.", steaming: true },
+  { n: "02", name: "Pasta", img: pasta, copy: "Nigerian-style spaghetti. Rich, peppery and saucy.", steaming: true },
   { n: "03", name: "Plantain", img: plantain, copy: "Ripe, sweet, caramelised at the edges." },
   { n: "04", name: "Protein", img: protein, copy: "Chicken or beef. Spiced, grilled, stacked." },
 ];
+
+function Steam() {
+  return (
+    <div className="steam" aria-hidden="true">
+      <i /><i /><i />
+    </div>
+  );
+}
 
 function Home() {
   return (
@@ -64,6 +72,7 @@ function Home() {
           <Reveal key={t.name} delay={i * 130}>
             <article className="group relative overflow-hidden rounded-3xl bg-card aspect-[3/4] hover-scale">
               <img src={t.img} alt={t.name} loading="lazy" width={1024} height={1024} className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" />
+              {t.steaming ? <Steam /> : null}
               <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/10 to-transparent" />
               <div className="absolute inset-x-0 bottom-0 p-7">
                 <div className="text-primary text-sm font-semibold tracking-[0.3em]">{t.n}</div>
@@ -96,8 +105,9 @@ function Home() {
           </div>
         </Reveal>
         <Reveal delay={150}>
-          <div className="rounded-3xl overflow-hidden aspect-square">
+          <div className="relative rounded-3xl overflow-hidden aspect-square">
             <img src={noodles} alt="Noodles lifted with chopsticks" loading="lazy" width={1024} height={1024} className="h-full w-full object-cover hover-scale" />
+            <Steam />
           </div>
         </Reveal>
       </section>
