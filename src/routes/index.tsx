@@ -59,7 +59,7 @@ function Home() {
         </Reveal>
       </section>
 
-      <section className="mx-auto max-w-7xl px-5 md:px-8 grid gap-5 md:grid-cols-3">
+      <section className="mx-auto max-w-7xl px-5 md:px-8 grid gap-5 sm:grid-cols-2 md:grid-cols-4">
         {trio.map((t, i) => (
           <Reveal key={t.name} delay={i * 130}>
             <article className="group relative overflow-hidden rounded-3xl bg-card aspect-[3/4] hover-scale">
@@ -79,7 +79,7 @@ function Home() {
         <div className="marquee font-display uppercase text-6xl md:text-8xl whitespace-nowrap">
           {Array.from({ length: 2 }).map((_, i) => (
             <span key={i} className="inline-flex gap-10 pr-10">
-              <span>Noodles</span><span className="text-primary">✦</span><span>Plantain</span><span className="text-primary">✦</span><span>Protein</span><span className="text-primary">✦</span>
+              <span>Noodles</span><span className="text-primary">✦</span><span>Pasta</span><span className="text-primary">✦</span><span>Plantain</span><span className="text-primary">✦</span><span>Protein</span><span className="text-primary">✦</span>
               <span className="text-outline">Chopstack</span><span className="text-primary">✦</span>
             </span>
           ))}
