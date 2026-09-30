@@ -48,7 +48,7 @@ export function Footer() {
       <div className="mx-auto max-w-7xl px-5 md:px-8 py-14 grid gap-10 md:grid-cols-3 items-end">
         <div>
           <div className="font-display leading-none" style={{ fontSize: "clamp(1.9rem, 9.5vw, 4.5rem)" }}>CHOPSTACK</div>
-          <div className="mt-3 text-sm uppercase tracking-[0.3em] text-primary">Noodles · Pasta · Plantain · Protein</div>
+          <div className="mt-3 text-xs md:text-sm uppercase tracking-[0.2em] md:tracking-[0.3em] text-primary">Noodles · Pasta · Plantain · Protein</div>
         </div>
         <div className="flex gap-8 text-sm uppercase tracking-[0.2em] text-muted-foreground">
           {links.map((l) => <Link key={l.to} to={l.to} className="hover:text-foreground">{l.label}</Link>)}
