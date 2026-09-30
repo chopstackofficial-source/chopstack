@@ -35,7 +35,6 @@ function Home() {
         <img src={hero} alt="CHOPSTACK noodles, plantain and chicken bowl" width={1536} height={1024} className="absolute inset-0 h-full w-full object-cover scale-105 animate-slow-zoom" />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
         <div className="relative mx-auto w-full max-w-7xl px-5 md:px-8 pb-12 md:pb-16">
-          <div className="text-xs md:text-sm uppercase tracking-[0.35em] text-primary mb-4 rise">Lagos · Est. 2026</div>
           <h1
             className="font-display font-black uppercase leading-[0.82] tracking-tight text-primary select-none rise [animation-delay:120ms]"
             style={{ fontSize: "clamp(2.6rem, 14.5vw, 12.5rem)" }}
@@ -55,7 +54,7 @@ function Home() {
       <section className="mx-auto max-w-7xl px-5 md:px-8 py-24 md:py-36">
         <Reveal>
           <p className="font-display uppercase text-4xl md:text-7xl leading-[0.9] max-w-5xl">
-            Three things. <span className="text-primary">Done right.</span> Every single time.
+            Four things. <span className="text-primary">Done right.</span> Every single time.
           </p>
         </Reveal>
       </section>
